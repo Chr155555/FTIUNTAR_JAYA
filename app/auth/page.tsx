@@ -53,9 +53,7 @@ export default function AuthPage() {
     const role = data?.user?.user_metadata?.role || (data?.user?.email === 'admin@suarawarga.id' ? 'admin' : '');
     const dest = role === 'admin' ? '/admin' : role === 'government' ? '/gov-admin' : '/profile';
 
-    setTimeout(() => {
-      window.location.href = dest;
-    }, 150);
+    window.location.replace(dest);
   };
 
   // Switch tab safely and reset form state

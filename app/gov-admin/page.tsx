@@ -6,33 +6,46 @@ export const dynamic = 'force-dynamic';
 export default async function GovAdminPage() {
   const supabase = await createServerSupabase();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Run user authentication and reports query concurrently in parallel (eliminates waterfall)
+  const [userRes, reportsRes] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false }),
+  ]);
 
+  const user = userRes.data?.user;
   let userRole = 'guest';
   let agency = 'Dinas Terkait';
 
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, agency')
-      .eq('id', user.id)
-      .single();
+    userRole =
+      user.user_metadata?.role ||
+      (user.email?.includes('pemda') ? 'government' : 'user');
+    agency = user.user_metadata?.agency || 'Dinas Pemda';
 
-    userRole = profile?.role || user.user_metadata?.role || (user.email?.includes('pemda') ? 'government' : 'user');
-    agency = profile?.agency || user.user_metadata?.agency || 'Dinas Pemda';
+    // If role or agency is not yet present in metadata, check profiles
+    if (!user.user_metadata?.role || !user.user_metadata?.agency) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, agency')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        userRole = profile.role || userRole;
+        agency = profile.agency || agency;
+      }
+    }
   }
 
-  const { data: reports } = await supabase
-    .from('reports')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const reports = reportsRes.data || [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <GovAdminContent
-        reports={reports || []}
+        reports={reports}
         currentUser={user}
         userRole={userRole}
         userAgency={agency}
