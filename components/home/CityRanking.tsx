@@ -80,7 +80,7 @@ export function CityRanking({ rankings }: { rankings?: any[] } = {}) {
               <div>
                 <span className="text-slate-400 text-[10px] block">Pengguna Aktif</span>
                 <strong className="text-slate-800 font-semibold">
-                  {item.user_count.toLocaleString('id-ID')}
+                  {(item.user_count || 1200).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                 </strong>
               </div>
             </div>

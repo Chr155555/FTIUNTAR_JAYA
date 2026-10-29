@@ -126,9 +126,12 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
   };
 
   const timeAgo = (dateStr: string) => {
+    if (!dateStr) return 'Baru saja';
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Baru saja';
     const now = new Date();
     const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (diff < 1) return 'Baru saja';
     if (diff < 60) return `${diff}m lalu`;
     if (diff < 1440) return `${Math.floor(diff / 60)}j lalu`;
     return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });

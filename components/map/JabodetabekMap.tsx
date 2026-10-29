@@ -12,7 +12,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { JABODETABEK_COORDS, JABODETABEK_CITY_RANKINGS } from '@/lib/constants';
+import { JABODETABEK_COORDS, JABODETABEK_CITY_RANKINGS, isSameCity } from '@/lib/constants';
 import type { Report } from '@/lib/types';
 
 interface Props {
@@ -23,6 +23,7 @@ interface Props {
   interactiveSelect?: boolean;
   onCoordinatePicked?: (lat: number, lng: number) => void;
   cityRankings?: any[];
+  searchQuery?: string;
 }
 
 export function JabodetabekMap({
@@ -33,6 +34,7 @@ export function JabodetabekMap({
   interactiveSelect = false,
   onCoordinatePicked,
   cityRankings,
+  searchQuery,
 }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -155,7 +157,19 @@ export function JabodetabekMap({
 
     // 1. Report pins
     reports.forEach((rep) => {
-      if (selectedCity !== 'Semua' && rep.city !== selectedCity) return;
+      if (!isSameCity(rep.city, selectedCity)) return;
+
+      if (searchQuery && searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matches =
+          rep.title.toLowerCase().includes(q) ||
+          rep.address.toLowerCase().includes(q) ||
+          rep.ticket_number.toLowerCase().includes(q) ||
+          rep.city.toLowerCase().includes(q) ||
+          rep.category.toLowerCase().includes(q) ||
+          (rep.description && rep.description.toLowerCase().includes(q));
+        if (!matches) return;
+      }
 
       const color =
         rep.status === 'Selesai'
@@ -309,7 +323,7 @@ export function JabodetabekMap({
     });
   };
 
-  // Re-render when reports or selectedCity changes and map is ready
+  // Re-render when reports, selectedCity or searchQuery changes and map is ready
   useEffect(() => {
     if (mapLoaded && mapInstanceRef.current) {
       import('maplibre-gl').then((mod: any) => {
@@ -317,7 +331,39 @@ export function JabodetabekMap({
         renderAllMarkers(lib, mapInstanceRef.current);
       });
     }
-  }, [reports, selectedCity, cityRankings, mapLoaded]);
+  }, [reports, selectedCity, cityRankings, mapLoaded, searchQuery]);
+
+  // Synchronize active report and smoothly fly to city on filter change
+  useEffect(() => {
+    if (selectedCity && selectedCity !== 'Semua') {
+      const match = reports.find((r) => isSameCity(r.city, selectedCity));
+      if (match) {
+        setActiveReport(match);
+      }
+    }
+
+    if (mapLoaded && mapInstanceRef.current) {
+      if (selectedCity === 'Semua') {
+        mapInstanceRef.current.flyTo({
+          center: [106.82, -6.24],
+          zoom: 11,
+          duration: 900,
+        });
+      } else {
+        const coord =
+          JABODETABEK_COORDS[selectedCity] ||
+          Object.entries(JABODETABEK_COORDS).find(([k]) => isSameCity(k, selectedCity))?.[1];
+
+        if (coord) {
+          mapInstanceRef.current.flyTo({
+            center: [coord.lng, coord.lat],
+            zoom: coord.zoom || 13,
+            duration: 900,
+          });
+        }
+      }
+    }
+  }, [selectedCity, mapLoaded, reports]);
 
   // Handle City flyTo
   const handleCityClick = (city: string) => {
@@ -542,7 +588,7 @@ export function JabodetabekMap({
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
                         <span>{r.total_reports} Pengaduan</span>
-                        <span>User: {r.user_count?.toLocaleString('id-ID')}</span>
+                        <span>User: {(r.user_count || 1200).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}</span>
                       </div>
                     </div>
                   ))}

@@ -21,7 +21,7 @@ import {
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
 import { calculateDailyFYP } from '@/lib/fyp-engine';
-import { CITIES, CATEGORIES } from '@/lib/constants';
+import { CITIES, CATEGORIES, isSameCity } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 import type { Report } from '@/lib/types';
 
@@ -92,30 +92,59 @@ export function HomeContent({
 
   // 1. Calculate Daily FYP recommendations with lightweight ML engine
   const fypRecommendations = useMemo(() => {
-    return calculateDailyFYP(reports, selectedCity === 'Semua' ? 'Jakarta Barat' : selectedCity);
-  }, [reports, selectedCity]);
+    let list = calculateDailyFYP(
+      reports,
+      selectedCity === 'Semua' ? 'Jakarta Barat' : selectedCity,
+      selectedCategory
+    );
+
+    // If a specific city is selected, strictly filter to that city
+    if (selectedCity !== 'Semua') {
+      list = list.filter((item) => isSameCity(item.report.city, selectedCity));
+    }
+
+    // If a specific category is selected, strictly filter to that category
+    if (selectedCategory !== 'Semua') {
+      list = list.filter((item) => item.report.category === selectedCategory);
+    }
+
+    if (!searchQuery.trim()) return list;
+
+    const q = searchQuery.toLowerCase().trim();
+    return list.filter((item) => {
+      const r = item.report;
+      return (
+        r.title.toLowerCase().includes(q) ||
+        r.address.toLowerCase().includes(q) ||
+        r.ticket_number.toLowerCase().includes(q) ||
+        r.city.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        (r.description && r.description.toLowerCase().includes(q))
+      );
+    });
+  }, [reports, selectedCity, selectedCategory, searchQuery]);
 
   // 2. Filter reports based on active tab and criteria
   const displayedReports = useMemo(() => {
     return reports
       .filter((r) => {
-        if (selectedCity !== 'Semua' && r.city !== selectedCity) return false;
+        if (!isSameCity(r.city, selectedCity)) return false;
         if (selectedCategory !== 'Semua' && r.category !== selectedCategory) return false;
 
         // Specific tab filter
         if (activeTab === 'onprocess' && r.status !== 'On-Process') return false;
 
-        // Search query
+        // Search query filter across all fields
         if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          if (
-            !r.title.toLowerCase().includes(q) &&
-            !r.address.toLowerCase().includes(q) &&
-            !r.ticket_number.toLowerCase().includes(q) &&
-            !r.city.toLowerCase().includes(q)
-          ) {
-            return false;
-          }
+          const q = searchQuery.toLowerCase().trim();
+          const matches =
+            r.title.toLowerCase().includes(q) ||
+            r.address.toLowerCase().includes(q) ||
+            r.ticket_number.toLowerCase().includes(q) ||
+            r.city.toLowerCase().includes(q) ||
+            r.category.toLowerCase().includes(q) ||
+            (r.description && r.description.toLowerCase().includes(q));
+          if (!matches) return false;
         }
         return true;
       })
@@ -138,9 +167,34 @@ export function HomeContent({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari jalan rusak, banjir, drainase, no. tiket, atau lokasi di Jabodetabek..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white transition-all"
+            className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white transition-all"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+              title="Hapus pencarian"
+            >
+              ✕
+            </button>
+          )}
         </div>
+
+        {searchQuery.trim() && (
+          <div className="flex items-center justify-between text-xs px-1 text-slate-500">
+            <span>
+              Menemukan <strong className="text-slate-900 font-semibold">{activeTab === 'fyp' ? fypRecommendations.length : displayedReports.length}</strong> laporan untuk pencarian &quot;{searchQuery}&quot;
+            </span>
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+            >
+              Reset Pencarian
+            </button>
+          </div>
+        )}
 
         {/* Feed Mode Segmented Tabs (FYP, Petisi Populer, On-Process, Peta Jabodetabek) */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
@@ -223,6 +277,84 @@ export function HomeContent({
             </button>
           ))}
         </div>
+
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 shrink-0 mr-1">
+            Kategori:
+          </span>
+          {['Semua', ...CATEGORIES].map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                selectedCategory === cat
+                  ? 'bg-rose-600 text-white shadow-2xs'
+                  : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Active Filters Bar */}
+        {(selectedCity !== 'Semua' || selectedCategory !== 'Semua' || searchQuery) && (
+          <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-100 text-xs">
+            <span className="text-slate-400 text-[11px] font-medium">Filter Aktif:</span>
+            {selectedCity !== 'Semua' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-medium shadow-2xs">
+                <span>Kota: <strong>{selectedCity}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCity('Semua')}
+                  className="hover:text-rose-300 ml-0.5 cursor-pointer"
+                  title="Hapus filter kota"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {selectedCategory !== 'Semua' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-medium shadow-2xs">
+                <span>Kategori: <strong>{selectedCategory}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('Semua')}
+                  className="hover:text-rose-900 ml-0.5 cursor-pointer"
+                  title="Hapus filter kategori"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {searchQuery && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-medium shadow-2xs">
+                <span>Cari: &quot;{searchQuery}&quot;</span>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="hover:text-amber-950 ml-0.5 cursor-pointer"
+                  title="Hapus pencarian"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCity('Semua');
+                setSelectedCategory('Semua');
+                setSearchQuery('');
+              }}
+              className="text-rose-600 hover:text-rose-700 text-[11px] font-semibold underline underline-offset-2 ml-auto cursor-pointer"
+            >
+              Reset Semua Filter
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Main Tab View Content */}
@@ -234,6 +366,7 @@ export function HomeContent({
             selectedCity={selectedCity}
             onSelectCity={(c) => setSelectedCity(c)}
             cityRankings={cityRankings}
+            searchQuery={searchQuery}
           />
         </div>
       ) : activeTab === 'fyp' ? (
@@ -259,7 +392,25 @@ export function HomeContent({
           </div>
 
           <div className="space-y-3.5">
-            {fypRecommendations.map((item, idx) => {
+            {fypRecommendations.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 text-center border border-slate-200/80 space-y-3">
+                <p className="text-sm font-medium text-slate-600">
+                  {searchQuery ? `Tidak ditemukan laporan rekomendasi untuk "${searchQuery}".` : 'Tidak ada rekomendasi laporan yang sesuai.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCity('Semua');
+                    setSelectedCategory('Semua');
+                    setSearchQuery('');
+                  }}
+                  className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-medium cursor-pointer hover:bg-slate-800 transition-colors"
+                >
+                  Reset Filter & Pencarian
+                </button>
+              </div>
+            ) : (
+              fypRecommendations.map((item, idx) => {
               const rep = item.report;
               const isUpvoted = upvotedIds.has(rep.id);
 
@@ -362,7 +513,7 @@ export function HomeContent({
                   </Link>
                 </div>
               );
-            })}
+            }))}
           </div>
         </section>
       ) : (

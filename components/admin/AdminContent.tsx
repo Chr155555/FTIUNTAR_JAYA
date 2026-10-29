@@ -132,7 +132,9 @@ export function AdminContent({
     return (
       r.title.toLowerCase().includes(q) ||
       r.ticket_number.toLowerCase().includes(q) ||
-      r.city.toLowerCase().includes(q)
+      r.city.toLowerCase().includes(q) ||
+      (r.address && r.address.toLowerCase().includes(q)) ||
+      (r.category && r.category.toLowerCase().includes(q))
     );
   });
 

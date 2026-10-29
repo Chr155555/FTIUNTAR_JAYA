@@ -1,19 +1,11 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { CITIES } from '@/lib/constants';
-import { JabodetabekMap } from '@/components/map/JabodetabekMap';
+import { PetaContent } from '@/components/map/PetaContent';
 import Link from 'next/link';
 import {
   MapPin,
   PlusCircle,
-  Sparkles,
-  Award,
-  Layers,
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
 } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,86 +159,8 @@ export default async function PetaPage() {
         </div>
       </div>
 
-      {/* Main MapLibre Map Container */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <JabodetabekMap
-          reports={reports}
-          cityRankings={liveRankings}
-          height="620px"
-        />
-      </section>
-
-      {/* Quick Report Grid Under Map */}
-      <section className="space-y-4 pt-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">
-              Daftar Pengaduan Terpetakan
-            </h2>
-            <p className="text-xs text-slate-500">
-              Klik kartu pengaduan untuk melihat kronologi penanganan atau menandatangani petisi.
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-          >
-            <span>Lihat FYP Beranda</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reports.slice(0, 6).map((rep) => (
-            <Link
-              key={rep.id}
-              href={`/laporan/${rep.ticket_number}`}
-              className="group block bg-white rounded-2xl p-4 border border-slate-200/80 hover:border-slate-300 shadow-2xs transition-all space-y-3"
-            >
-              <div className="relative h-44 rounded-xl overflow-hidden bg-slate-100 border border-slate-100">
-                <img
-                  src={rep.before_image_url}
-                  alt={rep.title}
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-200"
-                />
-                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-900/85 text-white backdrop-blur-xs">
-                  {rep.city}
-                </span>
-                <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-mono bg-black/70 text-white">
-                  {rep.ticket_number}
-                </span>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    {rep.category}
-                  </span>
-                  <StatusBadge status={rep.status} />
-                </div>
-
-                <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-2">
-                  {rep.title}
-                </h3>
-
-                <p className="text-[11px] text-slate-400 line-clamp-1 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  <span>{rep.address}</span>
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">
-                  {rep.upvote_count} Petisi Warga
-                </span>
-                <span className="text-rose-600 font-semibold group-hover:translate-x-0.5 transition-transform">
-                  Detail →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Interactive Map and Reports with Live Search */}
+      <PetaContent reports={reports} liveRankings={liveRankings} />
     </div>
   );
 }

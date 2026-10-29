@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Lock,
@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { CITIES } from '@/lib/constants';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -25,6 +26,37 @@ export default function AuthPage() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Prefetch target routes on mount so navigation is instant
+  useEffect(() => {
+    router.prefetch('/profile');
+    router.prefetch('/gov-admin');
+    router.prefetch('/admin');
+  }, [router]);
+
+  // Seamless fast redirect with client session synchronization
+  const handleAuthSuccess = async (data: any, welcomeText: string) => {
+    setMessage({
+      type: 'success',
+      text: welcomeText,
+    });
+
+    if (data?.session) {
+      try {
+        const supabase = createClient();
+        await supabase.auth.setSession(data.session);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    const role = data?.user?.user_metadata?.role || (data?.user?.email === 'admin@suarawarga.id' ? 'admin' : '');
+    const dest = role === 'admin' ? '/admin' : role === 'government' ? '/gov-admin' : '/profile';
+
+    setTimeout(() => {
+      window.location.href = dest;
+    }, 150);
+  };
 
   // Switch tab safely and reset form state
   const handleTabChange = (newTab: 'login' | 'register' | 'forgot') => {
@@ -55,14 +87,10 @@ export default function AuthPage() {
           text: data.message || 'Gagal masuk akun demo. Silakan coba kembali.',
         });
       } else {
-        setMessage({
-          type: 'success',
-          text: `Berhasil masuk sebagai ${data.user?.user_metadata?.name || demoEmail}! Mengalihkan...`,
-        });
-        setTimeout(() => {
-          router.push('/profile');
-          router.refresh();
-        }, 800);
+        await handleAuthSuccess(
+          data,
+          `Berhasil masuk sebagai ${data.user?.user_metadata?.name || demoEmail}! Mengalihkan...`
+        );
       }
     } catch (err: any) {
       setMessage({
@@ -118,15 +146,10 @@ export default function AuthPage() {
           return;
         }
 
-        setMessage({
-          type: 'success',
-          text: `Selamat datang kembali, ${data.user?.user_metadata?.name || data.user?.email}! Mengalihkan...`,
-        });
-
-        setTimeout(() => {
-          router.push('/profile');
-          router.refresh();
-        }, 800);
+        await handleAuthSuccess(
+          data,
+          `Selamat datang kembali, ${data.user?.user_metadata?.name || data.user?.email}! Mengalihkan...`
+        );
       } else if (tab === 'register') {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
@@ -152,21 +175,17 @@ export default function AuthPage() {
           return;
         }
 
-        setMessage({
-          type: 'success',
-          text: 'Pendaftaran berhasil! Akun Anda aktif dan tersimpan di database. Mengalihkan...',
-        });
-
-        setTimeout(() => {
-          router.push('/profile');
-          router.refresh();
-        }, 1000);
+        await handleAuthSuccess(
+          data,
+          'Pendaftaran berhasil! Akun Anda aktif dan tersimpan di database. Mengalihkan...'
+        );
       } else if (tab === 'forgot') {
         clearTimeout(timeoutId);
         setMessage({
           type: 'success',
           text: 'Tautan pemulihan kata sandi telah dikirim ke email Anda. Silakan periksa kotak masuk.',
         });
+        setLoading(false);
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {

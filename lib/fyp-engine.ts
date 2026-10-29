@@ -1,4 +1,5 @@
 import type { Report } from './types';
+import { isSameCity } from './constants';
 
 export interface FYPRecommendation {
   report: Report;
@@ -47,7 +48,7 @@ export function calculateDailyFYP(
       const velocityScore = (upvotes * 3.2) / Math.pow(ageInHours + 2, 0.75);
 
       // 3. User City Habit Matching (+30% bonus if within user's active Jabodetabek city)
-      const cityBonus = report.city.toLowerCase() === userCity.toLowerCase() ? 30 : 5;
+      const cityBonus = isSameCity(report.city, userCity) ? 30 : 5;
 
       // 4. Status priority (On-Process and Unresolved get community attention)
       const statusWeight =

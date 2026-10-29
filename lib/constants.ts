@@ -44,6 +44,29 @@ export const JABODETABEK_COORDS: Record<string, { lat: number; lng: number; zoom
 
 export const STATUS_OPTIONS = ['Menunggu', 'On-Process', 'Selesai', 'Ditolak'] as const;
 
+/**
+ * Normalizes and matches Jabodetabek city names reliably.
+ * Supports variations like 'Kota Depok' vs 'Depok', 'Kota Bogor' vs 'Bogor', etc.
+ */
+export function isSameCity(
+  reportCity: string | null | undefined,
+  filterCity: string | null | undefined
+): boolean {
+  if (!filterCity || filterCity === 'Semua') return true;
+  if (!reportCity) return false;
+
+  const normalize = (c: string) =>
+    c
+      .toLowerCase()
+      .replace(/^(kota|kabupaten|kab\.)\s+/i, '')
+      .trim();
+
+  const r = reportCity.toLowerCase().trim();
+  const f = filterCity.toLowerCase().trim();
+
+  return r === f || normalize(r) === normalize(f) || r.includes(normalize(f)) || f.includes(normalize(r));
+}
+
 export const JABODETABEK_CITY_RANKINGS = [
   {
     rank: 1,
