@@ -51,7 +51,7 @@ export function CityRanking({ rankings }: { rankings?: any[] } = {}) {
         className="flex gap-3 overflow-x-auto pb-2 scrollbar-none scroll-smooth"
         style={{ scrollSnapType: 'x mandatory' }}
       >
-        {JABODETABEK_CITY_RANKINGS.map((item) => (
+        {(rankings && rankings.length > 0 ? rankings : JABODETABEK_CITY_RANKINGS).map((item) => (
           <div
             key={item.city}
             className="rounded-2xl p-4 bg-white border border-slate-200/80 hover:border-slate-300 transition-all shadow-2xs space-y-3 shrink-0 w-[220px]"

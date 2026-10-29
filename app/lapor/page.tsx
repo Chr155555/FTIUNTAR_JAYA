@@ -5,23 +5,20 @@ import { useRouter } from 'next/navigation';
 import {
   MapPin,
   Building2,
-  Eye,
   Check,
   ChevronRight,
   ChevronLeft,
   Sparkles,
   Loader2,
   AlertCircle,
+  Upload,
+  Camera,
+  Trash2,
+  ImageIcon,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CATEGORIES, CITIES, AGENCY_ROUTING, JABODETABEK_COORDS } from '@/lib/constants';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
-
-const SAMPLE_IMAGES = [
-  'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=900&q=80',
-  'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=900&q=80',
-];
 
 export default function LaporPage() {
   const router = useRouter();
@@ -32,6 +29,11 @@ export default function LaporPage() {
   const [successTicket, setSuccessTicket] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     city: 'Jakarta Barat',
     address: '',
@@ -40,13 +42,70 @@ export default function LaporPage() {
     category: 'Jalan Rusak',
     title: '',
     description: '',
-    photoUrl: SAMPLE_IMAGES[0],
+    photoUrl: '',
     isAnonymous: false,
   });
 
   const agency = AGENCY_ROUTING[form.category] || 'Dinas Terkait Pemda';
 
-  // Coordinate picked on free Leaflet Jabodetabek map
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+  const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
+  const validateAndProcessFile = (file: File) => {
+    setUploadError(null);
+    setErrorMsg(null);
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isImageMime = file.type.startsWith('image/');
+    const isValidFormat = ALLOWED_EXTENSIONS.includes(ext) || isImageMime;
+
+    if (!isValidFormat) {
+      setUploadError('Format file tidak didukung! Harap unggah foto dengan format JPG, JPEG, atau PNG.');
+      return false;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      setUploadError(`Ukuran foto terlalu besar (${sizeMB} MB). Batas maksimum file adalah 5 MB (< 5 MB).`);
+      return false;
+    }
+
+    setUploadedFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setFilePreview(result);
+      setForm((p) => ({ ...p, photoUrl: result }));
+    };
+    reader.readAsDataURL(file);
+    return true;
+  };
+
+  // Handle citizen uploading photo directly from local device (< 5 MB, JPG/PNG)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      validateAndProcessFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      validateAndProcessFile(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setUploadedFile(null);
+    setFilePreview(null);
+    setUploadError(null);
+    setForm((p) => ({ ...p, photoUrl: '' }));
+  };
+
+  // Coordinate picked on free Leaflet / OpenFreeMap Jabodetabek map
   const handleCoordinatePicked = (lat: number, lng: number) => {
     setForm((prev) => ({ ...prev, lat, lng }));
   };
@@ -70,12 +129,22 @@ export default function LaporPage() {
       setErrorMsg('Harap masukkan alamat atau patokan lokasi.');
       return;
     }
+    if (!form.photoUrl) {
+      setErrorMsg('Harap masukkan / unggah foto bukti masalah dari perangkat Anda.');
+      return;
+    }
 
     setErrorMsg(null);
     setSubmitting(true);
     const ticketNumber = `LAP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
+      const { data: authData } = await supabase.auth.getUser();
+      const currentUser = authData?.user;
+      const reporterName = form.isAnonymous
+        ? `Warga Anonim #${Math.floor(100 + Math.random() * 899)}`
+        : currentUser?.user_metadata?.name || currentUser?.email?.split('@')[0] || 'Warga Terverifikasi';
+
       const { data, error } = await supabase
         .from('reports')
         .insert({
@@ -92,9 +161,8 @@ export default function LaporPage() {
           agency,
           before_image_url: form.photoUrl,
           is_anonymous: form.isAnonymous,
-          reporter_name: form.isAnonymous
-            ? `Warga Anonim #${Math.floor(100 + Math.random() * 899)}`
-            : 'Budi Santoso',
+          reporter_id: currentUser?.id || null,
+          reporter_name: reporterName,
           upvote_count: 1,
         })
         .select()
@@ -207,7 +275,7 @@ export default function LaporPage() {
                 1. Pilih Wilayah Jabodetabek & Titik Lokasi
               </h2>
               <p className="text-xs text-slate-500">
-                Klik pada peta Jabodetabek (Free OpenStreetMap) untuk menandai koordinat tepat.
+                Klik pada peta Jabodetabek (OpenFreeMaps Bright Mode) untuk menandai koordinat tepat.
               </p>
             </div>
 
@@ -244,7 +312,6 @@ export default function LaporPage() {
               </div>
             </div>
 
-            {/* Interactive Jabodetabek Leaflet Map for coordinate picking */}
             <div className="space-y-1">
               <label className="block text-[11px] font-medium text-slate-500">
                 Klik peta di bawah untuk menempatkan pin masalah:
@@ -334,13 +401,15 @@ export default function LaporPage() {
           </div>
         )}
 
-        {/* Step 3: Deskripsi & Foto Bukti */}
+        {/* Step 3: Deskripsi & Foto Bukti (USER EXPORT / UPLOAD BUKAN PILIH) */}
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">3. Rincian Kronologi & Foto</h2>
+              <h2 className="text-sm font-semibold text-slate-900">
+                3. Rincian Kronologi & Masukkan Foto Bukti
+              </h2>
               <p className="text-xs text-slate-500">
-                Berikan judul yang jelas agar warga lain dapat mengenali dan mendukung petisi.
+                Foto bukti dimasukkan langsung dari perangkat Anda (bukan memilih foto contoh).
               </p>
             </div>
 
@@ -369,28 +438,130 @@ export default function LaporPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Pilih Foto Bukti Kondisi Saat Ini (Sebelum Perbaikan)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {SAMPLE_IMAGES.map((img, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setForm((p) => ({ ...p, photoUrl: img }))}
-                    className={`relative h-24 rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
-                      form.photoUrl === img ? 'border-rose-600 ring-2 ring-rose-200' : 'border-slate-200 opacity-80'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                    {form.photoUrl === img && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px]">
-                        ✓
-                      </span>
-                    )}
-                  </div>
-                ))}
+            {/* FILE UPLOAD (FORMAT JPG / PNG, < 5 MB) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Upload Foto Bukti Kondisi (Sebelum Perbaikan)
+                </label>
+                <span className="text-[11px] font-medium text-slate-500">
+                  Wajib dilampirkan
+                </span>
               </div>
+
+              {/* Upload Error Alert */}
+              {uploadError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-semibold block">Gagal mengunggah foto:</span>
+                    <span>{uploadError}</span>
+                  </div>
+                </div>
+              )}
+
+              {filePreview ? (
+                /* Uploaded Preview Card */
+                <div className="relative rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="relative w-36 h-28 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                    <img
+                      src={filePreview}
+                      alt="Bukti foto kondisi fisik"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Foto Berhasil Diunggah</span>
+                    </div>
+
+                    <p className="text-xs font-medium text-slate-800 truncate" title={uploadedFile?.name || 'foto_bukti.jpg'}>
+                      {uploadedFile ? uploadedFile.name : 'foto_kondisi_lapangan.jpg'}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                        {uploadedFile ? `${(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB` : '< 5 MB'} / 5 MB
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium border border-slate-200 uppercase">
+                        {uploadedFile?.name.split('.').pop() || 'JPG'}
+                      </span>
+                      <span className="text-slate-400 text-[10px]">
+                        • Memenuhi syarat (&lt; 5 MB)
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400">
+                      Foto ini siap dijadikan bukti fisik untuk penanganan dinas terkait.
+                    </p>
+                  </div>
+
+                  <div className="flex sm:flex-col gap-2 shrink-0 w-full sm:w-auto">
+                    <label className="flex-1 sm:flex-none text-center px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-medium cursor-pointer transition-colors">
+                      Ganti Foto
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Dropzone to Browse / Upload from Device (< 5 MB, JPG/PNG) */
+                <label
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                  className={`block border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer group ${
+                    isDragging
+                      ? 'border-rose-500 bg-rose-50/40 ring-2 ring-rose-200'
+                      : 'border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-600 group-hover:text-rose-600 flex items-center justify-center mx-auto mb-3 transition-colors shadow-2xs">
+                    <Upload className="w-5 h-5" />
+                  </div>
+
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                    Klik untuk memilih foto atau seret ke sini
+                  </div>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Ambil langsung dari kamera ponsel atau telusuri galeri file komputer
+                  </p>
+
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                      Format: JPG, JPEG, PNG
+                    </span>
+                    <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 shadow-2xs">
+                      Ukuran Maks: &lt; 5 MB
+                    </span>
+                  </div>
+
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
             <div className="flex justify-between pt-2">
@@ -404,7 +575,14 @@ export default function LaporPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setStep(4)}
+                onClick={() => {
+                  if (!form.photoUrl) {
+                    setErrorMsg('Harap masukkan foto bukti terlebih dahulu.');
+                    return;
+                  }
+                  setErrorMsg(null);
+                  setStep(4);
+                }}
                 className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Tinjau & Kirim</span>
@@ -441,6 +619,12 @@ export default function LaporPage() {
                 <span className="text-slate-400 block mb-0.5">Judul Masalah:</span>
                 <span className="font-semibold text-slate-900">{form.title}</span>
               </div>
+              {form.photoUrl && (
+                <div className="pt-2 border-t border-slate-200 flex items-center gap-2">
+                  <span className="text-slate-400">Foto Bukti:</span>
+                  <span className="text-emerald-700 font-semibold">✓ Foto terlampir dari perangkat</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 p-3 rounded-xl bg-white border border-slate-200">

@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   MapPin,
-  Layers,
   ChevronRight,
   TrendingUp,
-  Maximize2,
   Building2,
   CheckCircle2,
   Clock,
@@ -23,6 +22,7 @@ interface Props {
   height?: string;
   interactiveSelect?: boolean;
   onCoordinatePicked?: (lat: number, lng: number) => void;
+  cityRankings?: any[];
 }
 
 export function JabodetabekMap({
@@ -32,85 +32,109 @@ export function JabodetabekMap({
   height = '520px',
   interactiveSelect = false,
   onCoordinatePicked,
+  cityRankings,
 }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markersLayerRef = useRef<any>(null);
-  const comparisonLayerRef = useRef<any>(null);
+  const reportMarkersRef = useRef<any[]>([]);
+  const comparisonMarkersRef = useRef<any[]>([]);
+  const pickerMarkerRef = useRef<any>(null);
 
   const [mode, setMode] = useState<'reports' | 'comparison'>('reports');
   const [activeReport, setActiveReport] = useState<Report | null>(reports[0] || null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    // Dynamically import Leaflet in browser only
-    async function initMap() {
+    async function initMaplibre() {
       if (typeof window === 'undefined' || !mapContainerRef.current) return;
-      const L = (await import('leaflet')).default;
+      const maplibreglMod = await import('maplibre-gl');
+      const maplibregl: any = (maplibreglMod as any).default || maplibreglMod;
 
       if (!isMounted || !mapContainerRef.current) return;
 
-      // Prevent re-initialization if already created
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
 
-      // Center of Jabodetabek (Jakarta - Depok - Tangerang - Bekasi)
-      const map = L.map(mapContainerRef.current, {
-        center: [-6.24, 106.82],
-        zoom: 11,
-        minZoom: 9,
+      // Initialize MapLibre with OpenFreeMap Bright mode style
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: 'https://tiles.openfreemap.org/styles/bright',
+        center: [106.8272, -6.2], // [lng, lat] for Jabodetabek center
+        zoom: 10.8,
+        minZoom: 8,
         maxZoom: 18,
-        zoomControl: false,
+        attributionControl: false,
       });
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      // Controls
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+      map.addControl(
+        new maplibregl.AttributionControl({
+          compact: true,
+          customAttribution: '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        }),
+        'bottom-left'
+      );
 
-      // Pale minimalist CartoDB Positron tiles (Google / Apple Maps minimal aesthetic)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      }).addTo(map);
+      map.on('error', (e: any) => {
+        console.warn('MapLibre notice:', e);
+      });
 
-      const markersGroup = L.layerGroup().addTo(map);
-      const comparisonGroup = L.layerGroup();
+      map.on('load', () => {
+        if (!isMounted) return;
+        mapInstanceRef.current = map;
+        setMapLoaded(true);
+        map.resize();
+        renderAllMarkers(maplibregl, map);
 
-      markersLayerRef.current = markersGroup;
-      comparisonLayerRef.current = comparisonGroup;
-      mapInstanceRef.current = map;
+        // Second resize tick to guarantee container calculation
+        setTimeout(() => {
+          if (isMounted && map) {
+            map.resize();
+          }
+        }, 150);
+      });
 
-      // Click event for interactive picking (e.g. in /lapor page)
+      // Coordinate picker for /lapor page
       if (interactiveSelect) {
-        let tempMarker: any = null;
         map.on('click', (e: any) => {
-          const { lat, lng } = e.latlng;
-          if (tempMarker) map.removeLayer(tempMarker);
-          tempMarker = L.marker([lat, lng], {
-            icon: L.divIcon({
-              className: 'custom-pin-picker',
-              html: `
-                <div style="background-color: #e11d48; width: 26px; height: 26px; border-radius: 9999px; border: 2.5px solid white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; color: white;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                </div>
-              `,
-              iconSize: [26, 26],
-              iconAnchor: [13, 26],
-            }),
-          }).addTo(map);
+          const { lng, lat } = e.lngLat;
+
+          if (pickerMarkerRef.current) {
+            pickerMarkerRef.current.remove();
+          }
+
+          const el = document.createElement('div');
+          el.className = 'custom-pin-picker animate-bounce';
+          el.style.cursor = 'pointer';
+          el.innerHTML = `
+            <div style="background-color: #e11d48; width: 30px; height: 30px; border-radius: 9999px; border: 2.5px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+          `;
+
+          el.addEventListener('mousedown', (ev) => ev.stopPropagation());
+          el.addEventListener('touchstart', (ev) => ev.stopPropagation(), { passive: true });
+          el.addEventListener('click', (ev) => ev.stopPropagation());
+
+          const newPicker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([lng, lat])
+            .addTo(map);
+
+          pickerMarkerRef.current = newPicker;
 
           if (onCoordinatePicked) {
             onCoordinatePicked(parseFloat(lat.toFixed(4)), parseFloat(lng.toFixed(4)));
           }
         });
       }
-
-      renderMarkers(L, map, markersGroup, comparisonGroup);
     }
 
-    initMap();
+    initMaplibre();
 
     return () => {
       isMounted = false;
@@ -121,12 +145,15 @@ export function JabodetabekMap({
     };
   }, [interactiveSelect]);
 
-  // Re-render markers when reports or selectedCity changes
-  const renderMarkers = (L: any, map: any, markersGroup: any, comparisonGroup: any) => {
-    markersGroup.clearLayers();
-    comparisonGroup.clearLayers();
+  // Render report markers and comparison markers
+  const renderAllMarkers = (maplibregl: any, map: any) => {
+    // Clear existing
+    reportMarkersRef.current.forEach((m) => m.remove());
+    comparisonMarkersRef.current.forEach((m) => m.remove());
+    reportMarkersRef.current = [];
+    comparisonMarkersRef.current = [];
 
-    // 1. Report Pins
+    // 1. Report pins
     reports.forEach((rep) => {
       if (selectedCity !== 'Semua' && rep.city !== selectedCity) return;
 
@@ -139,32 +166,31 @@ export function JabodetabekMap({
           ? '#94a3b8' // Slate
           : '#e11d48'; // Rose (Menunggu / Prioritas)
 
-      const pinIcon = L.divIcon({
-        className: 'jabodetabek-report-marker',
-        html: `
-          <div style="
-            background-color: ${color};
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 9999px;
-            border: 2px solid white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.18);
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            white-space: nowrap;
-          ">
-            <span>${rep.status === 'Selesai' ? '✓' : rep.upvote_count}</span>
-          </div>
-        `,
-        iconSize: [36, 22],
-        iconAnchor: [18, 11],
-      });
-
-      const marker = L.marker([rep.latitude, rep.longitude], { icon: pinIcon });
+      const el = document.createElement('div');
+      el.className = 'openfreemap-report-pin';
+      el.style.cursor = 'pointer';
+      el.innerHTML = `
+        <div style="
+          background-color: ${color};
+          color: white;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 9999px;
+          border: 2px solid white;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          white-space: nowrap;
+          cursor: pointer;
+          user-select: none;
+          pointer-events: auto;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        " onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='9999';" onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';">
+          <span>${rep.status === 'Selesai' ? '✓' : rep.upvote_count}</span>
+        </div>
+      `;
 
       const popupHtml = `
         <div style="width: 240px; font-family: system-ui, sans-serif;">
@@ -193,81 +219,148 @@ export function JabodetabekMap({
         </div>
       `;
 
-      marker.bindPopup(popupHtml);
-      marker.on('click', () => {
+      const lng = parseFloat(String(rep.longitude));
+      const lat = parseFloat(String(rep.latitude));
+      if (isNaN(lng) || isNaN(lat)) return;
+
+      const popup = new maplibregl.Popup({ offset: 12, closeButton: true }).setHTML(popupHtml);
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      // Stop mousedown and touchstart propagation so clicking pin NEVER drags the map
+      el.addEventListener('mousedown', (ev) => {
+        ev.stopPropagation();
+      });
+      el.addEventListener('touchstart', (ev) => {
+        ev.stopPropagation();
+      }, { passive: true });
+
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
         setActiveReport(rep);
+        marker.togglePopup();
+        map.flyTo({
+          center: [lng, lat],
+          zoom: Math.max(map.getZoom(), 13),
+          duration: 600,
+        });
       });
 
-      markersGroup.addLayer(marker);
+      reportMarkersRef.current.push(marker);
     });
 
-    // 2. City Comparison Circles (Comparative Dashboard Mode)
-    JABODETABEK_CITY_RANKINGS.forEach((rank) => {
+    // 2. Comparison Mode Markers (Dynamic live from database)
+    const activeRankings =
+      cityRankings && cityRankings.length > 0 ? cityRankings : JABODETABEK_CITY_RANKINGS;
+
+    activeRankings.forEach((rank: any) => {
       const coord = JABODETABEK_COORDS[rank.city];
       if (!coord) return;
 
-      const circle = L.circle([coord.lat, coord.lng], {
-        color: '#e11d48',
-        fillColor: '#fda4af',
-        fillOpacity: 0.25,
-        radius: 2800,
-        weight: 1.5,
+      const compEl = document.createElement('div');
+      compEl.className = 'city-comparison-bubble cursor-pointer';
+      compEl.style.cursor = 'pointer';
+      compEl.innerHTML = `
+        <div style="
+          background: white;
+          padding: 6px 10px;
+          border-radius: 14px;
+          border: 1.5px solid #fda4af;
+          box-shadow: 0 4px 14px rgba(225, 29, 72, 0.18);
+          text-align: center;
+          font-family: system-ui;
+          cursor: pointer;
+          user-select: none;
+          pointer-events: auto;
+          transition: transform 0.15s ease;
+        " onmouseover="this.style.transform='scale(1.08)';" onmouseout="this.style.transform='scale(1)';">
+          <div style="font-size: 11px; font-weight: 700; color: #0f172a;">${rank.city}</div>
+          <div style="font-size: 10px; color: #10b981; font-weight: 700;">Tuntas: ${rank.resolved_rate}%</div>
+          <div style="font-size: 9px; color: #64748b;">${rank.total_reports} Pengaduan</div>
+        </div>
+      `;
+
+      compEl.addEventListener('mousedown', (ev) => {
+        ev.stopPropagation();
+      });
+      compEl.addEventListener('touchstart', (ev) => {
+        ev.stopPropagation();
+      }, { passive: true });
+
+      compEl.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (onSelectCity) onSelectCity(rank.city);
+        map.flyTo({ center: [coord.lng, coord.lat], zoom: 12.5, duration: 600 });
       });
 
-      const labelMarker = L.marker([coord.lat, coord.lng], {
-        icon: L.divIcon({
-          className: 'city-stat-bubble',
-          html: `
-            <div style="
-              background: white;
-              padding: 5px 8px;
-              border-radius: 12px;
-              border: 1px solid #e2e8f0;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-              text-align: center;
-              font-family: system-ui;
-              cursor: pointer;
-            ">
-              <div style="font-size: 11px; font-weight: 700; color: #0f172a;">${rank.city}</div>
-              <div style="font-size: 9px; color: #10b981; font-weight: 600;">Tuntas: ${rank.resolved_rate}%</div>
-              <div style="font-size: 9px; color: #64748b;">${rank.total_reports} Pengaduan</div>
-            </div>
-          `,
-          iconSize: [110, 48],
-          iconAnchor: [55, 24],
-        }),
-      });
+      const compMarker = new maplibregl.Marker({ element: compEl })
+        .setLngLat([coord.lng, coord.lat])
+        .addTo(map);
 
-      comparisonGroup.addLayer(circle);
-      comparisonGroup.addLayer(labelMarker);
+      // Hide initially if mode === 'reports'
+      if (mode === 'reports') {
+        compEl.style.display = 'none';
+      }
+
+      comparisonMarkersRef.current.push(compMarker);
     });
   };
 
-  // Fly to selected city
-  const handleCityClick = async (city: string) => {
+  // Re-render when reports or selectedCity changes and map is ready
+  useEffect(() => {
+    if (mapLoaded && mapInstanceRef.current) {
+      import('maplibre-gl').then((mod: any) => {
+        const lib = mod.default || mod;
+        renderAllMarkers(lib, mapInstanceRef.current);
+      });
+    }
+  }, [reports, selectedCity, cityRankings, mapLoaded]);
+
+  // Handle City flyTo
+  const handleCityClick = (city: string) => {
     if (onSelectCity) onSelectCity(city);
 
     if (mapInstanceRef.current) {
       if (city === 'Semua') {
-        mapInstanceRef.current.flyTo([-6.24, 106.82], 11, { duration: 1.2 });
+        mapInstanceRef.current.flyTo({
+          center: [106.82, -6.24],
+          zoom: 11,
+          duration: 1200,
+        });
       } else if (JABODETABEK_COORDS[city]) {
         const { lat, lng, zoom } = JABODETABEK_COORDS[city];
-        mapInstanceRef.current.flyTo([lat, lng], zoom, { duration: 1.2 });
+        mapInstanceRef.current.flyTo({
+          center: [lng, lat],
+          zoom: zoom || 13,
+          duration: 1200,
+        });
       }
     }
   };
 
-  // Toggle mode
+  // Toggle mode: reports vs comparison
   const handleToggleMode = (newMode: 'reports' | 'comparison') => {
     setMode(newMode);
-    if (!mapInstanceRef.current) return;
-    if (newMode === 'comparison') {
-      if (markersLayerRef.current) mapInstanceRef.current.removeLayer(markersLayerRef.current);
-      if (comparisonLayerRef.current) mapInstanceRef.current.addLayer(comparisonLayerRef.current);
-      mapInstanceRef.current.flyTo([-6.25, 106.85], 11);
-    } else {
-      if (comparisonLayerRef.current) mapInstanceRef.current.removeLayer(comparisonLayerRef.current);
-      if (markersLayerRef.current) mapInstanceRef.current.addLayer(markersLayerRef.current);
+
+    reportMarkersRef.current.forEach((m) => {
+      const el = m.getElement();
+      if (el) el.style.display = newMode === 'reports' ? 'block' : 'none';
+    });
+
+    comparisonMarkersRef.current.forEach((m) => {
+      const el = m.getElement();
+      if (el) el.style.display = newMode === 'comparison' ? 'block' : 'none';
+    });
+
+    if (mapInstanceRef.current && newMode === 'comparison') {
+      mapInstanceRef.current.flyTo({
+        center: [106.84, -6.25],
+        zoom: 11,
+        duration: 1000,
+      });
     }
   };
 
@@ -282,12 +375,12 @@ export function JabodetabekMap({
           <div>
             <h3 className="text-xs sm:text-sm font-semibold text-slate-900 flex items-center gap-1.5">
               <span>Peta Sebaran Pengaduan Warga Jabodetabek</span>
-              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                100% Free OSM
+              <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                OpenFreeMaps • Bright Mode
               </span>
             </h3>
             <p className="text-[11px] text-slate-400">
-              Pantau titik masalah, progres perbaikan, dan evaluasi respon pemda setempat.
+              Vektor peta terang, tajam, dan cepat berbasis OpenFreeMap.
             </p>
           </div>
         </div>
@@ -297,7 +390,7 @@ export function JabodetabekMap({
           <button
             type="button"
             onClick={() => handleToggleMode('reports')}
-            className={`px-3 py-1 rounded-full font-medium transition-colors ${
+            className={`px-3 py-1 rounded-full font-medium transition-colors cursor-pointer ${
               mode === 'reports'
                 ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
@@ -308,7 +401,7 @@ export function JabodetabekMap({
           <button
             type="button"
             onClick={() => handleToggleMode('comparison')}
-            className={`px-3 py-1 rounded-full font-medium transition-colors ${
+            className={`px-3 py-1 rounded-full font-medium transition-colors cursor-pointer ${
               mode === 'comparison'
                 ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
@@ -329,7 +422,7 @@ export function JabodetabekMap({
             key={c}
             type="button"
             onClick={() => handleCityClick(c)}
-            className={`px-2.5 py-1 rounded-full whitespace-nowrap text-[11px] font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-full whitespace-nowrap text-[11px] font-medium transition-colors cursor-pointer ${
               selectedCity === c
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
@@ -430,27 +523,29 @@ export function JabodetabekMap({
               </div>
 
               <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1">
-                {JABODETABEK_CITY_RANKINGS.slice(0, 4).map((r) => (
-                  <div
-                    key={r.city}
-                    className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <strong className="text-slate-900 font-semibold">{r.city}</strong>
-                      <span className="text-emerald-700 font-bold">{r.resolved_rate}%</span>
+                {(cityRankings && cityRankings.length > 0 ? cityRankings : JABODETABEK_CITY_RANKINGS)
+                  .slice(0, 4)
+                  .map((r: any) => (
+                    <div
+                      key={r.city}
+                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <strong className="text-slate-900 font-semibold">{r.city}</strong>
+                        <span className="text-emerald-700 font-bold">{r.resolved_rate}%</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: `${r.resolved_rate}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
+                        <span>{r.total_reports} Pengaduan</span>
+                        <span>User: {r.user_count?.toLocaleString('id-ID')}</span>
+                      </div>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full"
-                        style={{ width: `${r.resolved_rate}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
-                      <span>{r.total_reports} Pengaduan</span>
-                      <span>User: {r.user_count.toLocaleString('id-ID')}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
 
               <Link
