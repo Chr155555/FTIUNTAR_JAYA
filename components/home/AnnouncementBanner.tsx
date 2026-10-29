@@ -1,123 +1,131 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, ChevronRight, ChevronLeft, Pause, Play, Megaphone } from 'lucide-react';
+import { AlertTriangle, ChevronRight } from 'lucide-react';
 import type { PublicNotice } from '@/lib/types';
 
-export function AnnouncementBanner({ notices }: { notices: PublicNotice[] }) {
+export function AnnouncementBanner({ notices }: { notices?: PublicNotice[] }) {
   const [idx, setIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const total = notices?.length || 0;
+  const defaultNotices: PublicNotice[] = [
+    {
+      id: 'notice-1',
+      city: 'Jakarta Barat',
+      title: 'Perbaikan Saluran Air & Gorong-gorong Jl. Daan Mogot KM 12',
+      impact: 'Penyempitan lajur kiri arah Cengkareng',
+      agency: 'Dinas SDA DKI Jakarta',
+      status: 'Aktif Dikerjakan',
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 'notice-2',
+      city: 'Kota Bekasi',
+      title: 'Pengaspalan Ulang & Perbaikan Marka Jl. Ahmad Yani',
+      impact: 'Pekerjaan malam hari pukul 22.00 - 04.00 WIB',
+      agency: 'Dinas Bina Marga Kota Bekasi',
+      status: 'Terjadwal',
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 'notice-3',
+      city: 'Kota Depok',
+      title: 'Pembersihan Sedimen & Normalisasi Kali Cabang Barat Margonda',
+      impact: 'Alat berat beroperasi di tepi jalan raya',
+      agency: 'Dinas PUPR Kota Depok',
+      status: 'Aktif Dikerjakan',
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 'notice-4',
+      city: 'Kota Bogor',
+      title: 'Pemeliharaan Lampu PJU & Pemangkasan Pohon Rawan Tumbang Jl. Pajajaran',
+      impact: 'Arus lalu lintas dikawal Dishub',
+      agency: 'Dishub Kota Bogor',
+      status: 'Aktif Dikerjakan',
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+  ];
 
-  // Auto-rotate running ticker every 5 seconds if not paused by hover
+  const items = notices && notices.length > 0 ? notices : defaultNotices;
+  const total = items.length;
+
   useEffect(() => {
     if (total <= 1 || isPaused) return;
 
     timerRef.current = setInterval(() => {
       setIdx((prev) => (prev + 1) % total);
-    }, 5000);
+    }, 6000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [total, isPaused]);
 
-  if (!notices || total === 0) return null;
-
-  // Safe boundary access to prevent undefined crash during re-renders or filter changes
   const safeIdx = idx % total;
-  const current = notices[safeIdx] || notices[0];
-  if (!current) return null;
+  const current = items[safeIdx] || items[0];
 
   return (
     <section
       id="pengumuman"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 sm:p-5 transition-all shadow-2xs scroll-mt-20 relative overflow-hidden"
+      className="space-y-2.5 scroll-mt-20"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Main Alert Info */}
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-            <AlertTriangle className="w-4 h-4" />
+      <h2 className="text-base font-bold text-slate-900 tracking-tight">
+        Pemberitahuan Pekerjaan Umum
+      </h2>
+
+      <div className="bg-slate-100/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+        {/* Left: Icon & Info */}
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <AlertTriangle className="w-6 h-6 text-white stroke-[2.3]" />
           </div>
 
-          <div className="space-y-1 min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white text-amber-900 border border-amber-200/80 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                Pemberitahuan Pekerjaan Umum
-              </span>
-
-              {current.city && (
-                <span className="text-xs font-semibold text-slate-700 bg-white/90 px-2 py-0.5 rounded-md border border-slate-200/70">
-                  {current.city}
-                </span>
-              )}
-
-              {total > 1 && (
-                <span className="text-[10px] text-amber-800 font-mono bg-amber-100/60 px-1.5 py-0.2 rounded">
-                  {safeIdx + 1} / {total}
-                </span>
-              )}
-            </div>
-
-            {/* Smooth transition title & impact */}
-            <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-2">
+          <div className="space-y-0.5 min-w-0 flex-1">
+            <span className="text-[11px] font-medium text-slate-500 block">
+              {current.city || 'Jabodetabek'}
+            </span>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug truncate">
               {current.title}
-            </h2>
-
-            <p className="text-xs text-slate-600 line-clamp-2">
-              <span className="font-semibold text-slate-900">Dampak:</span> {current.impact || 'Perhatikan rambu di lokasi.'}
-              {current.agency && (
-                <span className="text-slate-400"> — {current.agency}</span>
-              )}
+            </h3>
+            <p className="text-xs text-slate-600 truncate mt-0.5">
+              <span className="font-semibold text-slate-800">Dampak:</span> {current.impact || 'Perhatikan rambu di lokasi.'}
+              {current.agency && <span className="text-slate-400"> — {current.agency}</span>}
             </p>
           </div>
         </div>
 
-        {/* Controls: Dots & Navigation buttons */}
-        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-          {total > 1 && (
-            <div className="flex items-center gap-1 mr-1">
-              {notices.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setIdx(i)}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    safeIdx === i ? 'w-5 bg-amber-600' : 'w-1.5 bg-amber-200 hover:bg-amber-300'
-                  }`}
-                  title={`Pengumuman ${i + 1}`}
-                />
-              ))}
-            </div>
-          )}
-
-          <div className="flex items-center gap-1">
-            {total > 1 && (
+        {/* Right: Dots indicator & Next button */}
+        <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+          <div className="flex items-center gap-1.5">
+            {items.map((_, i) => (
               <button
+                key={i}
                 type="button"
-                onClick={() => setIdx((prev) => (prev - 1 + total) % total)}
-                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                title="Sebelumnya"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setIdx((prev) => (prev + 1) % total)}
-              className="text-xs font-semibold text-slate-700 hover:text-slate-900 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
-            >
-              <span>Selanjutnya</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-            </button>
+                onClick={() => setIdx(i)}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  safeIdx === i ? 'w-5 bg-amber-500' : 'w-1.5 bg-amber-200 hover:bg-amber-300'
+                }`}
+                title={`Pemberitahuan ${i + 1}`}
+              />
+            ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIdx((prev) => (prev + 1) % total)}
+            className="px-3 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 shadow-2xs flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <span>Selanjutnya</span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+          </button>
         </div>
       </div>
     </section>
