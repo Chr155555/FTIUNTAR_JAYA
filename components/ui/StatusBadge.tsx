@@ -6,7 +6,7 @@ export function StatusBadge({ status }: { status: string }) {
       label: 'Selesai'
     },
     'On-Process': {
-      bg: 'bg-amber-50 text-amber-800 border-amber-200/70',
+      bg: 'bg-yellow-100 text-slate-900 border-yellow-300 font-semibold',
       dot: 'bg-amber-500 animate-pulse',
       label: 'Sedang Dikerjakan'
     },

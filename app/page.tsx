@@ -28,10 +28,12 @@ export default async function HomePage() {
   const notices = noticesRes.data || [];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <AnnouncementBanner notices={notices} />
-      <CityRanking rankings={CITY_RANKINGS} />
-      <HomeContent initialReports={reports} />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <HomeContent 
+        initialReports={reports} 
+        notices={notices}
+        cityRankings={CITY_RANKINGS}
+      />
     </div>
   );
 }

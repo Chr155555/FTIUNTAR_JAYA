@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -106,25 +106,16 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/70">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between gap-4">
+      <div className="w-full px-4 sm:px-8 h-16 flex items-center justify-between gap-6">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+        <Link href="/" className="flex items-center gap-3 group shrink-0">
           <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold shadow-2xs group-hover:bg-slate-800 transition-colors">
             <Megaphone className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900">
-                Suara<span className="text-rose-600">Warga</span>
-              </span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                Jabodetabek
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 hidden sm:block">
-              Pengaduan & Petisi Warga • Transparan ke Pemda
-            </p>
-          </div>
+          <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900">
+            Suara<span className="text-rose-600">Warga</span>
+            <span className="text-slate-400 font-normal"> - JABODETABEK</span>
+          </span>
         </Link>
 
         {/* Desktop Nav (Clean, Google/Twitter minimal style - No hardcoded Detail tab) */}
@@ -313,3 +304,4 @@ export function Navbar() {
     </header>
   );
 }
+
