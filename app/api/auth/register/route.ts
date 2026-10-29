@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
 
     const trimmedEmail = email.trim().toLowerCase();
 
+    // STRICT ROLE CONTROL: Public registration can ONLY create role 'user'
     const { data, error } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
         data: {
           name: name ? name.trim() : splitEmailName(trimmedEmail),
           city: city || 'Jakarta Barat',
+          role: 'user',
         },
       },
     });
@@ -33,17 +35,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Ensure role is 'user' in profiles table
+    if (data.user?.id) {
+      await supabase
+        .from('profiles')
+        .update({ role: 'user', city: city || 'Jakarta Barat' })
+        .eq('id', data.user.id);
+    }
+
     // Automatically sign in to set cookies and session
-    await supabase.auth.signInWithPassword({
+    const { data: signData } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Registrasi berhasil dan akun telah aktif!',
+      message: 'Registrasi berhasil dan akun warga Anda telah aktif!',
       user: data.user,
-      session: data.session,
+      session: signData?.session,
     });
   } catch (err: any) {
     return NextResponse.json(

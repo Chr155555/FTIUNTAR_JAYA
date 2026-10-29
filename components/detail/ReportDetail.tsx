@@ -67,12 +67,18 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
     if (!commentInput.trim() || submittingComment) return;
     setSubmittingComment(true);
 
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user;
+    const authorName = currentUser?.user_metadata?.name || currentUser?.email?.split('@')[0] || 'Warga Terverifikasi';
+    const isOfficial = currentUser?.email?.includes('go.id') || currentUser?.user_metadata?.role === 'gov';
+
     const newComment = {
       report_id: report.id,
-      user_name: 'Budi Santoso',
-      user_role: 'Warga Terverifikasi',
+      user_id: currentUser?.id || null,
+      user_name: authorName,
+      user_role: isOfficial ? 'Instansi Resmi' : 'Warga Terverifikasi',
       content: commentInput.trim(),
-      is_official: false,
+      is_official: isOfficial,
     };
 
     const { data } = await supabase.from('comments').insert(newComment).select().single();
@@ -85,9 +91,10 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
 
   const handleAudit = async (type: 'puas' | 'belum') => {
     setAuditVote(type);
+    const { data: authData } = await supabase.auth.getUser();
     await supabase.from('satisfaction_audits').insert({
       report_id: report.id,
-      user_id: 'guest',
+      user_id: authData?.user?.id || 'guest-' + Math.floor(Math.random() * 10000),
       is_satisfied: type === 'puas',
       rating: stars,
     });
@@ -99,12 +106,14 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
     setSubmittingKpi(true);
 
     try {
+      const { data: authData } = await supabase.auth.getUser();
       await supabase.from('kpi_penalties').insert({
         report_id: report.id,
         city: report.city,
         agency: report.agency,
         reason: kpiReason.trim(),
         penalty_points: 2.0,
+        reported_by: authData?.user?.email || 'Warga Terverifikasi',
       });
 
       setKpiReportSubmitted(true);

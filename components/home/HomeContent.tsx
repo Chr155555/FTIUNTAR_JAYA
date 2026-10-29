@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -25,7 +25,13 @@ import { CITIES, CATEGORIES } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 import type { Report } from '@/lib/types';
 
-export function HomeContent({ initialReports }: { initialReports: Report[] }) {
+export function HomeContent({
+  initialReports,
+  cityRankings,
+}: {
+  initialReports: Report[];
+  cityRankings?: any[];
+}) {
   const supabase = createClient();
   const [reports, setReports] = useState<Report[]>(initialReports);
 
@@ -35,6 +41,22 @@ export function HomeContent({ initialReports }: { initialReports: Report[] }) {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(new Set());
+
+  // Listen for #peta in URL to instantly switch to map tab and scroll
+  useEffect(() => {
+    const checkHash = () => {
+      if (typeof window !== 'undefined' && window.location.hash === '#peta') {
+        setActiveTab('map');
+        setTimeout(() => {
+          const el = document.getElementById('peta');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
 
   // Handle instant petition sign / upvote
   const handleSignPetition = async (e: React.MouseEvent, report: Report) => {
@@ -211,6 +233,7 @@ export function HomeContent({ initialReports }: { initialReports: Report[] }) {
             reports={reports}
             selectedCity={selectedCity}
             onSelectCity={(c) => setSelectedCity(c)}
+            cityRankings={cityRankings}
           />
         </div>
       ) : activeTab === 'fyp' ? (

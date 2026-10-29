@@ -22,7 +22,7 @@ export function CityRanking({ rankings }: { rankings?: any[] } = {}) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {JABODETABEK_CITY_RANKINGS.map((item) => (
+        {(rankings && rankings.length > 0 ? rankings : JABODETABEK_CITY_RANKINGS).map((item) => (
           <div
             key={item.city}
             className="rounded-2xl p-4 bg-white border border-slate-200/80 hover:border-slate-300 transition-all shadow-2xs space-y-3"

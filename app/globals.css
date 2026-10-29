@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 @theme inline {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -19,7 +20,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Leaflet Map styling to match minimal pale Google theme */
+/* Custom MapLibre / OpenFreeMap styling */
+.maplibregl-map {
+  font-family: inherit;
+}
+
+.maplibregl-popup-content {
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-popup-close-button {
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+  color: #64748b !important;
+  z-index: 20;
+}
+
+/* Custom Leaflet Map styling */
 .leaflet-container {
   font-family: inherit;
   background-color: #f1f5f9 !important;

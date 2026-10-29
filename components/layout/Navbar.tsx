@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
-  X,
   ExternalLink,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -28,46 +27,63 @@ export function Navbar() {
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([
-    {
-      id: 1,
-      title: 'Pembaruan Status Laporan #LAP-2026-8821',
-      desc: 'Satgas Bina Marga Jakbar sedang melakukan penambalan cold-mix di lokasi.',
-      time: '15m lalu',
-      type: 'process',
-      read: false,
-      link: '/laporan/LAP-2026-8821',
-    },
-    {
-      id: 2,
-      title: 'Pemberitahuan Pekerjaan Pemda Bekasi',
-      desc: 'Pekerjaan pengaspalan malam Jl. Ahmad Yani mulai pukul 22.00 WIB.',
-      time: '1j lalu',
-      type: 'notice',
-      read: false,
-      link: '/#pengumuman',
-    },
-    {
-      id: 3,
-      title: 'Laporan Selesai & Menunggu Audit',
-      desc: 'Drainase Margonda Depok sudah lancar. Silakan isi audit kepuasan warga.',
-      time: '2j lalu',
-      type: 'success',
-      read: true,
-      link: '/laporan/LAP-2026-8819',
-    },
-  ]);
-
+  const [notifications, setNotifications] = useState<any[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  // Load real notifications from Supabase
+  const loadNotifications = async (userId?: string) => {
+    try {
+      let query = supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      const { data } = await query;
+      if (data && data.length > 0) {
+        setNotifications(data);
+      } else {
+        // Fallback default system notice if table is completely empty
+        setNotifications([
+          {
+            id: 'sys-1',
+            title: 'Sistem Terhubung ke Supabase',
+            message: 'Database pengaduan warga Jabodetabek aktif.',
+            created_at: new Date().toISOString(),
+            is_read: true,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error('Failed to load notifications from database:', err);
+    }
+  };
+
   useEffect(() => {
+    // Check initial user session
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUser(data.user);
+      loadNotifications(data.user?.id);
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setCurrentUser(session?.user || null);
+      if (session?.user) {
+        loadNotifications(session.user.id);
+      }
     });
+
+    // Realtime notification listener
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        (payload) => {
+          setNotifications((prev) => [payload.new, ...prev]);
+        }
+      )
+      .subscribe();
 
     // Close notification dropdown when clicked outside
     const handleClickOutside = (e: MouseEvent) => {
@@ -79,6 +95,7 @@ export function Navbar() {
 
     return () => {
       authListener.subscription.unsubscribe();
+      supabase.removeChannel(channel);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
@@ -91,17 +108,37 @@ export function Navbar() {
     router.refresh();
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    try {
+      await supabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+    } catch (e) {
+      // ignore
+    }
   };
+
+  const timeAgo = (dateStr: string) => {
+    if (!dateStr) return 'Baru saja';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (diff < 1) return 'Baru saja';
+    if (diff < 60) return `${diff}m lalu`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}j lalu`;
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
+
+  const isAdmin =
+    currentUser?.user_metadata?.role === 'admin' || currentUser?.email === 'admin@suarawarga.id';
 
   const navItems = [
     { href: '/', label: 'Beranda & FYP', icon: Compass },
-    { href: '/#peta', label: 'Peta Jabodetabek', icon: MapPin },
+    { href: '/peta', label: 'Peta Jabodetabek', icon: MapPin },
     { href: '/#kpi', label: 'KPI Kota', icon: Award },
     { href: '/gov-admin', label: 'Portal Pemda', icon: ShieldCheck },
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
   ];
 
   return (
@@ -127,7 +164,7 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Nav (Clean, Google/Twitter minimal style - No hardcoded Detail tab) */}
+        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -153,9 +190,8 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Actions, Notifications & User */}
+        {/* Actions & Notifications & Profile */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Buat Laporan CTA Button */}
           <Link
             href="/lapor"
             className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3.5 py-2 rounded-full shadow-xs transition-colors"
@@ -165,7 +201,7 @@ export function Navbar() {
             <span className="sm:hidden">Lapor</span>
           </Link>
 
-          {/* Interactive Notifications Bell Dropdown */}
+          {/* Interactive Live Notifications Bell */}
           <div className="relative" ref={notifRef}>
             <button
               type="button"
@@ -181,12 +217,13 @@ export function Navbar() {
               )}
             </button>
 
-            {/* Notification Drawer */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2.5 z-50 animate-fade-in">
                 <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-xs text-slate-900">Notifikasi Terkini</span>
+                    <span className="font-semibold text-xs text-slate-900">
+                      Notifikasi Database ({notifications.length})
+                    </span>
                     {unreadCount > 0 && (
                       <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-600 font-bold">
                         {unreadCount} baru
@@ -198,44 +235,42 @@ export function Navbar() {
                       onClick={markAllRead}
                       className="text-[10px] text-slate-500 hover:text-slate-900 font-medium"
                     >
-                      Tandai sudah dibaca
+                      Tandai dibaca
                     </button>
                   )}
                 </div>
 
                 <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
                   {notifications.map((n) => (
-                    <Link
+                    <div
                       key={n.id}
-                      href={n.link}
-                      onClick={() => setShowNotifications(false)}
                       className={`p-3 block hover:bg-slate-50 transition-colors ${
-                        !n.read ? 'bg-slate-50/60' : ''
+                        !n.is_read ? 'bg-slate-50/60' : ''
                       }`}
                     >
                       <div className="flex items-start gap-2.5">
                         <div className="mt-0.5 shrink-0">
-                          {n.type === 'process' ? (
-                            <Clock className="w-4 h-4 text-amber-500" />
-                          ) : n.type === 'success' ? (
+                          {n.title?.includes('Selesai') ? (
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          ) : (
+                          ) : n.title?.includes('Ditolak') ? (
                             <AlertTriangle className="w-4 h-4 text-rose-500" />
+                          ) : (
+                            <Clock className="w-4 h-4 text-amber-500" />
                           )}
                         </div>
                         <div className="space-y-0.5 flex-1">
                           <div className="text-xs font-semibold text-slate-900 flex items-center justify-between">
                             <span className="line-clamp-1">{n.title}</span>
                             <span className="text-[10px] text-slate-400 font-normal shrink-0 ml-1">
-                              {n.time}
+                              {timeAgo(n.created_at)}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug">
-                            {n.desc}
+                            {n.message}
                           </p>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
 
@@ -253,7 +288,7 @@ export function Navbar() {
             )}
           </div>
 
-          {/* User Account State */}
+          {/* User Account State from Database */}
           {currentUser ? (
             <div className="flex items-center gap-1.5">
               <Link

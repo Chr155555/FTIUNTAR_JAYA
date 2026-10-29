@@ -137,7 +137,15 @@ export function ProfileContent({ reports, notifications: initialNotifs }: Props)
       {/* Tab Content */}
       {tab === 'my-reports' && (
         <div className="space-y-2.5">
-          {reports.slice(0, 5).map((rep) => (
+          {reports
+            .filter((rep) =>
+              isLoggedIn
+                ? rep.reporter_id === user.email ||
+                  rep.reporter_name === user.name ||
+                  rep.reporter_name?.includes(user.name.split(' ')[0])
+                : true
+            )
+            .map((rep) => (
             <Link
               key={rep.id}
               href={`/laporan/${rep.ticket_number}`}
