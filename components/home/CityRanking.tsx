@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { JABODETABEK_CITY_RANKINGS } from '@/lib/constants';
 
-export function CityRanking({ rankings }: { rankings?: typeof JABODETABEK_CITY_RANKINGS } = {}) {
+export function CityRanking() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (dir: 'left' | 'right') => {
