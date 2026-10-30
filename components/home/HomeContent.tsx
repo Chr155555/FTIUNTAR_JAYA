@@ -241,13 +241,13 @@ export function HomeContent({
             </div>
 
             {/* 4. Results counter & Sort status */}
-            <div className="flex items-center justify-between text-xs text-slate-900 font-bold px-1 pt-1">
-              <span>
-                Menampilkan <strong className="font-bold text-slate-900">{displayedReports.length}</strong> laporan di Jabodetabek
-              </span>
-              <span className="text-slate-900 font-bold">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-900 px-1 pt-1">
+              <strong className="font-bold text-slate-900">
+                Menampilkan {displayedReports.length} laporan di Jabodetabek
+              </strong>
+              <strong className="font-bold text-slate-900">
                 {activeTab === 'onprocess' ? 'Status: Sedang Dikerjakan' : 'Urutan: Petisi Tertinggi'}
-              </span>
+              </strong>
             </div>
 
             {/* 5. Report Cards List */}
