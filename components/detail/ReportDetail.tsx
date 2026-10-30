@@ -296,15 +296,17 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
           {report.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-          <span className="flex items-center gap-1 text-slate-600">
-            <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+        <div className="space-y-1.5 text-xs text-slate-700">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <span>{report.address}</span>
-          </span>
-          <span>•</span>
-          <span>Pelapor: <strong className="font-medium text-slate-700">{report.reporter_name || 'Anonim'}</strong></span>
-          <span>•</span>
-          <span>Instansi: <strong className="font-medium text-slate-700">{report.agency}</strong></span>
+          </div>
+          <div>
+            Pelapor: <strong className="font-semibold text-slate-900">{report.reporter_name || 'Anonim'}</strong>
+          </div>
+          <div>
+            Instansi: <strong className="font-semibold text-slate-900">{report.agency}</strong>
+          </div>
         </div>
 
         <p className="text-sm text-slate-700 leading-relaxed pt-2 border-t border-slate-100">
