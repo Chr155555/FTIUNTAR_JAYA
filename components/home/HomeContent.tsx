@@ -25,7 +25,7 @@ export function HomeContent({
 }: {
   initialReports: Report[];
   notices?: PublicNotice[];
-  cityRankings?: any[];
+  cityRankings?: Record<string, unknown>[];
 }) {
   const supabase = createClient();
   const [reports, setReports] = useState<Report[]>(initialReports);
@@ -241,11 +241,11 @@ export function HomeContent({
             </div>
 
             {/* 4. Results counter & Sort status */}
-            <div className="flex items-center justify-between text-xs text-slate-400 px-1 pt-1">
+            <div className="flex items-center justify-between text-xs text-slate-900 font-bold px-1 pt-1">
               <span>
-                Menampilkan <strong className="font-semibold text-slate-600">{displayedReports.length}</strong> laporan di Jabodetabek
+                Menampilkan <strong className="font-bold text-slate-900">{displayedReports.length}</strong> laporan di Jabodetabek
               </span>
-              <span className="text-slate-500 font-medium">
+              <span className="text-slate-900 font-bold">
                 {activeTab === 'onprocess' ? 'Status: Sedang Dikerjakan' : 'Urutan: Petisi Tertinggi'}
               </span>
             </div>
