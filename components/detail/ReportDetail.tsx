@@ -18,8 +18,11 @@ import {
   ShieldAlert,
   Sparkles,
   TrendingDown,
+  TrendingUp,
+  Clock,
   Building2,
 } from 'lucide-react';
+import { CITIES } from '@/lib/constants';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { createClient } from '@/lib/supabase/client';
 import type { Report, ReportTimeline, Comment } from '@/lib/types';
@@ -141,7 +144,72 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
   const petitionPercent = Math.min(100, Math.round((upvoteCount / petitionTarget) * 100));
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
+      {/* SISI KIRI: Sidebar Navigation & List Kota Jabodetabek */}
+      <aside className="w-full lg:w-60 xl:w-64 shrink-0 space-y-4 lg:sticky lg:top-20">
+        {/* Card 1: MENU UTAMA */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1">
+          <h2 className="text-[11px] font-bold text-slate-900 tracking-wider uppercase mb-2.5">
+            MENU UTAMA
+          </h2>
+
+          <Link
+            href="/"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-slate-900 text-white shadow-2xs"
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Petisi Terpopuler</span>
+          </Link>
+
+          <Link
+            href="/?tab=onprocess"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          >
+            <Clock className="w-4 h-4" />
+            <span>Sedang Dikerjakan</span>
+          </Link>
+
+          <Link
+            href="/peta"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Peta Jabodetabek</span>
+          </Link>
+        </div>
+
+        {/* Card 2: WILAYAH KOTA */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1">
+          <h2 className="text-[11px] font-bold text-slate-900 tracking-wider uppercase mb-2.5">
+            WILAYAH KOTA
+          </h2>
+
+          <div className="space-y-0.5">
+            {['Semua', ...CITIES].map((city) => {
+              const isSelected = city === 'Semua';
+              return (
+                <Link
+                  key={city}
+                  href={city === 'Semua' ? '/' : '/?city=' + encodeURIComponent(city)}
+                  className={'w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer ' + (
+                    isSelected
+                      ? 'bg-slate-900 text-white font-semibold shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal'
+                  )}
+                >
+                  <span>{city}</span>
+                  {isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-white ml-2 shrink-0" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+
+      {/* SISI KANAN: 5 Kotak Konten Detail */}
+      <main className="flex-1 min-w-0 space-y-5">
       {/* Navigation & Ticket ID */}
       <div className="flex items-center justify-between">
         <Link
@@ -539,6 +607,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
           )}
         </div>
       </section>
+      </main>
     </div>
   );
 }

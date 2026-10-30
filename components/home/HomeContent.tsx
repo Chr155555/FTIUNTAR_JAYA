@@ -36,20 +36,32 @@ export function HomeContent({
   const [searchQuery, setSearchQuery] = useState('');
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(new Set());
 
-  // Listen for #peta in URL to instantly switch to map tab
+  // Listen for URL params or hash to switch tab/city
   useEffect(() => {
-    const checkHash = () => {
-      if (typeof window !== 'undefined' && window.location.hash === '#peta') {
+    const checkUrl = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get('city');
+      if (c) setSelectedCity(c);
+      const t = params.get('tab');
+      if (t === 'onprocess' || t === 'petition' || t === 'map') {
+        setActiveTab(t);
+      }
+      if (window.location.hash === '#peta') {
         setActiveTab('map');
         setTimeout(() => {
           const el = document.getElementById('peta');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }, 150);
+      } else if (window.location.hash === '#onprocess') {
+        setActiveTab('onprocess');
+      } else if (window.location.hash === '#petition') {
+        setActiveTab('petition');
       }
     };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    checkUrl();
+    window.addEventListener('hashchange', checkUrl);
+    return () => window.removeEventListener('hashchange', checkUrl);
   }, []);
 
   // Handle instant petition sign / upvote
