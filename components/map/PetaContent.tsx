@@ -225,7 +225,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
                     <StatusBadge status={rep.status} />
                   </div>
 
-                  <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-2">
+                  <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-slate-600 group-active:text-slate-700 transition-colors line-clamp-2">
                     {rep.title}
                   </h3>
 
@@ -239,7 +239,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
                   <span className="text-slate-500 font-medium">
                     {rep.upvote_count} Petisi Warga
                   </span>
-                  <span className="text-rose-600 font-semibold group-hover:translate-x-0.5 transition-transform">
+                  <span className="text-slate-600 font-semibold group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all">
                     Detail →
                   </span>
                 </div>

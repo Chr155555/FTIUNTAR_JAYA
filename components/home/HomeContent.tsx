@@ -309,7 +309,7 @@ export function HomeContent({
                         {/* Details */}
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <Link href={`/laporan/${rep.ticket_number}`} className="block group">
-                            <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-rose-600 transition-colors leading-snug line-clamp-1">
+                            <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-slate-600 group-active:text-slate-700 transition-colors leading-snug line-clamp-1">
                               {rep.title}
                             </h3>
                           </Link>
