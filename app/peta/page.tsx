@@ -85,12 +85,9 @@ export default async function PetaPage() {
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80">
               <MapPin className="w-3 h-3" />
               Peta Vektor Jabodetabek
-            </span>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-              OpenFreeMap Bright Mode
             </span>
           </div>
 
@@ -106,7 +103,7 @@ export default async function PetaPage() {
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href="/lapor"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Lapor Masalah Baru</span>

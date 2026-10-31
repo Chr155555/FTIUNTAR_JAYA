@@ -275,7 +275,7 @@ export default function LaporPage() {
                 1. Pilih Wilayah Jabodetabek & Titik Lokasi
               </h2>
               <p className="text-xs text-slate-500">
-                Klik pada peta Jabodetabek (OpenFreeMaps Bright Mode) untuk menandai koordinat tepat.
+                Klik pada peta Jabodetabek untuk menandai koordinat tepat laporan Anda.
               </p>
             </div>
 
