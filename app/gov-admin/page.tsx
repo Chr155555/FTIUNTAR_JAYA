@@ -43,7 +43,7 @@ export default async function GovAdminPage() {
   const reports = reportsRes.data || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       <GovAdminContent
         reports={reports}
         currentUser={user}

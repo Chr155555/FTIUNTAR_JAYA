@@ -238,13 +238,12 @@ export default function LaporPage() {
               key={i}
               type="button"
               onClick={() => setStep(i + 1)}
-              className={`py-1.5 rounded-full text-xs font-medium text-center transition-all cursor-pointer ${
-                step === i + 1
+              className={`py-1.5 rounded-full text-xs font-medium text-center transition-all cursor-pointer ${step === i + 1
                   ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                   : step > i + 1
-                  ? 'text-slate-800'
-                  : 'text-slate-400'
-              }`}
+                    ? 'text-slate-800'
+                    : 'text-slate-400'
+                }`}
             >
               {i + 1}. {label}
             </button>
@@ -359,11 +358,10 @@ export default function LaporPage() {
                   key={cat}
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, category: cat }))}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    form.category === cat
+                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${form.category === cat
                       ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
                       : 'border-slate-200/80 bg-white hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   <div className="font-semibold text-xs sm:text-sm text-slate-900">{cat}</div>
                 </button>
@@ -527,11 +525,10 @@ export default function LaporPage() {
                   }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={handleDrop}
-                  className={`block border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer group ${
-                    isDragging
+                  className={`block border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer group ${isDragging
                       ? 'border-rose-500 bg-rose-50/40 ring-2 ring-rose-200'
                       : 'border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100/60'
-                  }`}
+                    }`}
                 >
                   <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-600 group-hover:text-rose-600 flex items-center justify-center mx-auto mb-3 transition-colors shadow-2xs">
                     <Upload className="w-5 h-5" />
@@ -655,7 +652,7 @@ export default function LaporPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 {submitting ? (
                   <>
