@@ -491,7 +491,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
           <button
             type="button"
             onClick={() => setShowKpiReportModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-rose-700 border border-rose-300 hover:bg-rose-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-800 border border-slate-300 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <TrendingDown className="w-3.5 h-3.5" />
             <span>Laporkan Penurunan KPI Pemda</span>
@@ -503,18 +503,13 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
       {showKpiReportModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
-                <TrendingDown className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Komplain Kinerja & Penalti KPI Kota
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Laporan Anda akan secara langsung menurunkan skor efektivitas & ranking {report.city} di Dashboard Jabodetabek.
-                </p>
-              </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">
+                Komplain Kinerja & Penalti KPI Kota
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Laporan Anda akan secara langsung menurunkan skor efektivitas & ranking {report.city} di Dashboard Jabodetabek.
+              </p>
             </div>
 
             {kpiReportSubmitted ? (
@@ -548,7 +543,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
                   <button
                     type="submit"
                     disabled={submittingKpi}
-                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors"
                   >
                     {submittingKpi ? 'Memproses...' : 'Kirim Penalti KPI'}
                   </button>
@@ -622,15 +617,11 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-xs text-slate-900">{c.user_name}</span>
-                    <span
-                      className={`text-[10px] font-medium px-2 py-0.2 rounded-full ${
-                        c.is_official
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-white text-slate-600 border border-slate-200'
-                      }`}
-                    >
-                      {c.user_role}
-                    </span>
+                    {(c.is_official || c.user_role === 'Instansi Resmi') && (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-900 text-white">
+                        {c.user_role || 'Instansi Resmi'}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[11px] text-slate-400">{timeAgo(c.created_at)}</span>
                 </div>
