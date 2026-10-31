@@ -84,7 +84,7 @@ export function AnnouncementBanner({ notices }: { notices?: PublicNotice[] }) {
       <div className="bg-slate-100/70 border border-slate-200/80 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
         {/* Left: Icon & Info */}
         <div className="flex items-center gap-3.5 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-xl bg-yellow-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
             <AlertTriangle className="w-6 h-6 text-white stroke-[2.3]" />
           </div>
 
@@ -111,7 +111,7 @@ export function AnnouncementBanner({ notices }: { notices?: PublicNotice[] }) {
                 type="button"
                 onClick={() => setIdx(i)}
                 className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  safeIdx === i ? 'w-5 bg-yellow-500' : 'w-1.5 bg-yellow-200 hover:bg-yellow-300'
+                  safeIdx === i ? 'w-5 bg-slate-600' : 'w-1.5 bg-slate-300 hover:bg-slate-400'
                 }`}
                 title={`Pemberitahuan ${i + 1}`}
               />

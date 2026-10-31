@@ -79,7 +79,7 @@ export function CityRanking({ rankings }: { rankings?: any[] } = {}) {
               </div>
               <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  className="h-full rounded-full bg-yellow-400 transition-all"
                   style={{ width: `${item.resolved_rate}%` }}
                 />
               </div>

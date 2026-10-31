@@ -7,11 +7,8 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
-  User,
-  ShieldCheck,
-  ArrowRight,
 } from 'lucide-react';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { CITIES } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 
@@ -63,42 +60,7 @@ export default function AuthPage() {
     setLoading(false);
   };
 
-  // Instant fill & login for demo accounts
-  const handleQuickDemo = async (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setTab('login');
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: demoEmail, password: demoPass }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setMessage({
-          type: 'error',
-          text: data.message || 'Gagal masuk akun demo. Silakan coba kembali.',
-        });
-      } else {
-        await handleAuthSuccess(
-          data,
-          `Berhasil masuk sebagai ${data.user?.user_metadata?.name || demoEmail}! Mengalihkan...`
-        );
-      }
-    } catch (err: any) {
-      setMessage({
-        type: 'error',
-        text: err.message || 'Koneksi gagal. Periksa jaringan Anda.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // Handle Login & Register & Forgot Password
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,21 +172,21 @@ export default function AuthPage() {
         <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/70 shadow-xs space-y-5">
           {/* Brand & Header */}
           <div className="text-center space-y-1.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center mx-auto mb-2 border border-slate-200/60">
-              <Lock className="w-4 h-4 text-slate-700" />
+            <div className="flex justify-center mb-2">
+              <BrandLogo className="w-10 h-10" />
             </div>
-            <h1 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
               {tab === 'login'
-                ? 'Masuk ke Akun Warga'
+                ? 'Masuk ke SuaraWarga'
                 : tab === 'register'
                 ? 'Daftar Akun Baru'
                 : 'Pemulihan Kata Sandi'}
             </h1>
             <p className="text-xs text-slate-500">
               {tab === 'login'
-                ? 'Gunakan email terdaftar atau akun uji coba di bawah'
+                ? 'Masukkan email dan kata sandi Anda untuk melanjutkan'
                 : tab === 'register'
-                ? 'Buat akun dalam hitungan detik untuk melapor'
+                ? 'Daftar untuk mulai menyampaikan aspirasi dan laporan'
                 : 'Masukkan email untuk menerima tautan pemulihan'}
             </p>
           </div>
@@ -247,61 +209,6 @@ export default function AuthPage() {
                 </button>
               )
             )}
-          </div>
-
-          {/* Quick Demo Accounts Banner */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Pilih Role Demo (1-Klik Masuk):</span>
-            </div>
-            <div className="grid grid-cols-1 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('budi@gmail.com', 'password123')}
-                disabled={loading}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100/80 border border-slate-200/80 text-[11px] transition-colors cursor-pointer group disabled:opacity-50"
-              >
-                <div className="font-semibold text-slate-800 flex items-center justify-between">
-                  <span>1. Budi Santoso (User Biasa)</span>
-                  <ArrowRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <div className="text-[10px] text-slate-400">budi@gmail.com • Hak: Buat Laporan & Petisi</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('pemda@jakbar.go.id', 'password123')}
-                disabled={loading}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100/80 border border-slate-200/80 text-[11px] transition-colors cursor-pointer group disabled:opacity-50"
-              >
-                <div className="font-semibold text-slate-800 flex items-center justify-between">
-                  <span>2. Satgas Pemda (Government Account)</span>
-                  <ArrowRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <div className="text-[10px] text-slate-400">pemda@jakbar.go.id • Hak: Update Status & Bukti After</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('admin@suarawarga.id', 'admin123')}
-                disabled={loading}
-                className="text-left px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100/80 border border-rose-200/80 text-[11px] transition-colors cursor-pointer group disabled:opacity-50"
-              >
-                <div className="font-semibold text-rose-800 flex items-center justify-between">
-                  <span>3. Super Admin (Admin Panel)</span>
-                  <ArrowRight className="w-3 h-3 text-rose-500 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <div className="text-[10px] text-slate-400">admin@suarawarga.id • Hak: Delete Laporan & Buat Akun Gov</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex items-center justify-center">
-            <div className="w-full border-t border-slate-100" />
-            <span className="absolute bg-white px-2.5 text-[10px] uppercase tracking-wider text-slate-400">
-              atau input manual
-            </span>
           </div>
 
           {/* Main Form */}

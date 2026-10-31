@@ -22,7 +22,7 @@ export default async function GovAdminPage() {
   if (user) {
     userRole =
       user.user_metadata?.role ||
-      (user.email?.includes('pemda') ? 'government' : 'user');
+      (user.email === 'admin@suarawarga.id' ? 'admin' : user.email?.includes('pemda') || user.email?.endsWith('.go.id') ? 'government' : 'user');
     agency = user.user_metadata?.agency || 'Dinas Pemda';
 
     // If role or agency is not yet present in metadata, check profiles

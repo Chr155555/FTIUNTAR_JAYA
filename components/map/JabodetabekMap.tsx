@@ -582,7 +582,7 @@ export function JabodetabekMap({
                       </div>
                       <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
                         <div
-                          className="h-full bg-emerald-500 rounded-full"
+                          className="h-full bg-yellow-400 rounded-full"
                           style={{ width: `${r.resolved_rate}%` }}
                         />
                       </div>
