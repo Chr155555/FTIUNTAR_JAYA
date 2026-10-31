@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MapPin,
@@ -23,6 +23,19 @@ import { JabodetabekMap } from '@/components/map/JabodetabekMap';
 export default function LaporPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace('/auth');
+      } else {
+        setCheckingAuth(false);
+      }
+    }
+    checkAuth();
+  }, [router, supabase]);
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -212,6 +225,15 @@ export default function LaporPage() {
       setSubmitting(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2.5">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+        <span className="text-xs text-slate-400 font-medium">Memeriksa status login...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
