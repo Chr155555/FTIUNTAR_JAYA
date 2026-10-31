@@ -106,7 +106,7 @@ export default async function PetaPage() {
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href="/lapor"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-colors"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Lapor Masalah Baru</span>
