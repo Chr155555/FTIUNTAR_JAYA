@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Bell, CheckCircle2, LogOut, User } from 'lucide-react';
@@ -13,11 +14,33 @@ interface Props {
   notifications: Notification[];
 }
 
+
+function isStaffAccount(role?: string, email?: string): boolean {
+  const r = (role || '').toLowerCase();
+  return (
+    r === 'admin' ||
+    r === 'super_admin' ||
+    r === 'government' ||
+    r === 'gov_admin' ||
+    email === 'admin@suarawarga.id' ||
+    Boolean(email?.endsWith('.go.id'))
+  );
+}
+
 export function ProfileContent({ reports, notifications: initialNotifs }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
-  const [tab, setTab] = useState<'my-reports' | 'upvoted' | 'notifications'>('my-reports');
+  const [tab, setTab] = useState<'my-reports' | 'upvoted' | 'notifications'>('upvoted');
   const [notifications, setNotifications] = useState(initialNotifs);
+
+  // Read ?tab= URL param and jump to it
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'notifications') setTab('notifications');
+    else if (tabParam === 'upvoted') setTab('upvoted');
+    else if (tabParam === 'my-reports') setTab('my-reports');
+  }, [searchParams]);
 
   const [user, setUser] = useState({
     name: 'Budi Santoso',
@@ -25,6 +48,7 @@ export function ProfileContent({ reports, notifications: initialNotifs }: Props)
     city: 'Jakarta Barat',
     points: 420,
     badge: 'Warga Pelopor',
+    role: 'CITIZEN' as string,
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -39,27 +63,27 @@ export function ProfileContent({ reports, notifications: initialNotifs }: Props)
           .eq('id', authUser.id)
           .single();
 
-        if (profile) {
-          setUser({
-            name: profile.name,
-            email: profile.email || authUser.email || '',
-            city: profile.city || 'Jakarta Barat',
-            points: profile.points || 100,
-            badge: profile.badge || 'Warga Aktif',
-          });
-        } else {
-          setUser({
-            name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Warga',
-            email: authUser.email || '',
-            city: authUser.user_metadata?.city || 'Jakarta Barat',
-            points: 100,
-            badge: 'Warga Aktif',
-          });
+        const role = profile?.role || (authUser.email === 'admin@suarawarga.id' ? 'admin' : 'user');
+        const email = profile?.email || authUser.email || '';
+        const name = profile?.name || authUser.user_metadata?.name || email.split('@')[0] || 'Warga';
+        const city = profile?.city || authUser.user_metadata?.city || 'Jakarta Barat';
+        const points = profile?.points || 100;
+        const badge = profile?.badge || (isStaffAccount(role, email) ? 'Instansi Resmi' : 'Warga Aktif');
+
+        setUser({ name, email, city, points, badge, role });
+
+        const tabParam = searchParams.get('tab');
+        if (!tabParam) {
+          if (isStaffAccount(role, email)) {
+            setTab('upvoted');
+          } else {
+            setTab('my-reports');
+          }
         }
       }
     }
     fetchUser();
-  }, []);
+  }, [searchParams]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -116,10 +140,10 @@ export function ProfileContent({ reports, notifications: initialNotifs }: Props)
       {/* Clean Tab Pills */}
       <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-full w-fit">
         {([
-          { id: 'my-reports' as const, label: 'Laporan Saya' },
+          ...(!isStaffAccount(user.role, user.email) ? [{ id: 'my-reports' as const, label: 'Laporan Saya' }] : []),
           { id: 'upvoted' as const, label: 'Didukung' },
           { id: 'notifications' as const, label: `Notifikasi (${notifications.length})` },
-        ]).map((t) => (
+        ] as { id: 'my-reports' | 'upvoted' | 'notifications'; label: string }[]).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}

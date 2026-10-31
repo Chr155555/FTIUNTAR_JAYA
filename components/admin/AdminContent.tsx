@@ -42,6 +42,7 @@ export function AdminContent({
 
   // Search & filter
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Menunggu' | 'On-Process' | 'Selesai'>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -127,6 +128,9 @@ export function AdminContent({
   };
 
   const filteredReports = reports.filter((r) => {
+    if (statusFilter !== 'all' && r.status !== statusFilter) {
+      return false;
+    }
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -167,22 +171,18 @@ export function AdminContent({
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6 py-6">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Header Panel */}
       <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500 text-white">
-              Super Admin Control
+              Admin Panel - Control & Services
             </span>
-            <span className="text-xs text-slate-300">SuaraWarga Jabodetabek</span>
           </div>
           <h1 className="text-base sm:text-lg font-bold mt-1.5">
             Admin Panel: Manajemen Laporan & Akun Instansi
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Otoritas penuh untuk menghapus laporan, memvalidasi satgas, dan menerbitkan akun dinas pemerintah.
-          </p>
         </div>
 
         <div className="flex gap-2">
@@ -215,65 +215,132 @@ export function AdminContent({
         </div>
       )}
 
-      {/* Tabs Switcher */}
-      <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-full w-fit">
-        <button
-          type="button"
-          onClick={() => setTab('reports')}
-          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-            tab === 'reports' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          Moderasi & Hapus Laporan ({reports.length})
-        </button>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* LEFT SIDEBAR: MENU UTAMA */}
+        <aside className="w-full lg:w-60 xl:w-64 shrink-0 space-y-4 lg:sticky lg:top-20">
+          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1">
+            <h2 className="text-[11px] font-bold text-slate-900 tracking-wider uppercase mb-2.5">
+              MENU UTAMA
+            </h2>
 
-        <button
-          type="button"
-          onClick={() => setTab('create-gov')}
-          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-            tab === 'create-gov' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          + Buat Akun Government
-        </button>
+            <button
+              type="button"
+              onClick={() => setTab('reports')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                tab === 'reports'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 truncate">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span className="truncate">Moderasi & Hapus Laporan</span>
+              </div>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ml-1.5 ${
+                  tab === 'reports' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {reports.length}
+              </span>
+            </button>
 
-        <button
-          type="button"
-          onClick={() => setTab('users')}
-          className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-            tab === 'users' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          Daftar Role Akun ({profiles.length})
-        </button>
-      </div>
+            <button
+              type="button"
+              onClick={() => setTab('create-gov')}
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                tab === 'create-gov'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <UserPlus className="w-4 h-4 shrink-0" />
+              <span className="truncate">+ Buat Akun Government</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTab('users')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                tab === 'users'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 truncate">
+                <Users className="w-4 h-4 shrink-0" />
+                <span className="truncate">Daftar Role Akun</span>
+              </div>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ml-1.5 ${
+                  tab === 'users' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {profiles.length}
+              </span>
+            </button>
+          </div>
+        </aside>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 min-w-0 space-y-4">
 
       {/* TAB 1: MODERASI & HAPUS LAPORAN */}
       {tab === 'reports' && (
-        <section className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="space-y-3.5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 Kelola Seluruh Pengaduan Warga
               </h2>
-              <p className="text-xs text-slate-500">
-                Super Admin dapat menghapus laporan palsu, spam, atau tidak sesuai ketentuan.
-              </p>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari tiket, judul, kota..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-200/90 rounded-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 shadow-2xs transition-all"
               />
             </div>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          {/* Status Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {[
+              { id: 'all', label: 'Semua', count: reports.length },
+              { id: 'Menunggu', label: 'Menunggu', count: reports.filter((r) => r.status === 'Menunggu').length },
+              { id: 'On-Process', label: 'Sedang Dikerjakan', count: reports.filter((r) => r.status === 'On-Process').length },
+              { id: 'Selesai', label: 'Selesai', count: reports.filter((r) => r.status === 'Selesai').length },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setStatusFilter(f.id as any)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                  statusFilter === f.id
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-white border border-slate-200/80 text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
+              >
+                <span>{f.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    statusFilter === f.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {f.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <section className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs">
+            <div className="divide-y divide-slate-100">
             {filteredReports.map((rep) => (
               <div
                 key={rep.id}
@@ -347,6 +414,7 @@ export function AdminContent({
             )}
           </div>
         </section>
+        </div>
       )}
 
       {/* TAB 2: BUAT AKUN GOVERNMENT (KHUSUS ADMIN PANEL) */}
@@ -515,6 +583,8 @@ export function AdminContent({
           </div>
         </section>
       )}
+        </main>
+      </div>
     </div>
   );
 }
