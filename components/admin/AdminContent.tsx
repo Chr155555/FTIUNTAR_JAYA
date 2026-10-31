@@ -175,7 +175,7 @@ export function AdminContent({
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500 text-white">
               Super Admin Control
             </span>
-            <span className="text-xs text-slate-300">SuaraWarga Jabodetabek</span>
+            <span className="text-xs text-slate-300">SuaraWarga</span>
           </div>
           <h1 className="text-base sm:text-lg font-bold mt-1.5">
             Admin Panel: Manajemen Laporan & Akun Instansi
