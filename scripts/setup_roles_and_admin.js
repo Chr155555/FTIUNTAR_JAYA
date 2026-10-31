@@ -1,13 +1,31 @@
+/* eslint-disable */
 const { Client } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 
-const dbClient = new Client({
-  connectionString: 'postgresql://postgres:@210896Ab@fa@db.xssqhjcytklfpytnssot.supabase.co:5432/postgres'
-});
+// Auto-load environment variables from .env or .env.local
+try {
+  if (typeof process.loadEnvFile === 'function') {
+    const envLocal = path.resolve(__dirname, '../.env.local');
+    const envRoot = path.resolve(__dirname, '../.env');
+    if (fs.existsSync(envLocal)) process.loadEnvFile(envLocal);
+    else if (fs.existsSync(envRoot)) process.loadEnvFile(envRoot);
+  }
+} catch {}
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('ERROR: DATABASE_URL environment variable is missing.');
+  console.error('Please configure DATABASE_URL in your .env or .env.local file.');
+  process.exit(1);
+}
+
+const dbClient = new Client({ connectionString });
 
 const sb = createClient(
-  'https://xssqhjcytklfpytnssot.supabase.co',
-  'sb_publishable_hZtn7jlpj3zBstAULQz7Ig_G8W7z7U1'
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xssqhjcytklfpytnssot.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
 async function main() {

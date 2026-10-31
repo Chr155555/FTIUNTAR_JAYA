@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Sparkles,
   TrendingDown,
+  Clock,
   Building2,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -42,6 +43,28 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
   const [upvoted, setUpvoted] = useState(false);
   const [upvoteCount, setUpvoteCount] = useState(report.upvote_count);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [activeSection, setActiveSection] = useState<'foto' | 'timeline' | 'audit' | 'diskusi'>('foto');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections: ('foto' | 'timeline' | 'audit' | 'diskusi')[] = ['foto', 'timeline', 'audit', 'diskusi'];
+      const sectionIds = ['foto-bukti', 'timeline-status', 'audit-pemda', 'diskusi-warga'];
+
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sectionIds[i]);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 200) {
+            setActiveSection(sections[i]);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Citizen KPI Penalty report state
   const [showKpiReportModal, setShowKpiReportModal] = useState(false);
@@ -141,7 +164,83 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
   const petitionPercent = Math.min(100, Math.round((upvoteCount / petitionTarget) * 100));
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto px-4 py-4 sm:py-6">
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
+      {/* SISI KIRI: Sidebar Navigation & List Kota Jabodetabek */}
+      <aside className="w-full lg:w-60 xl:w-64 shrink-0 space-y-4 lg:sticky lg:top-20">
+        {/* Kotak Navigasi Sesuai Isi Detail Laporan */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1">
+          <h2 className="text-[11px] font-bold text-slate-900 tracking-wider uppercase mb-2.5">
+            NAVIGASI LAPORAN
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSection('foto');
+              document.getElementById('foto-bukti')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer ${
+              activeSection === 'foto'
+                ? 'bg-slate-900 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Eye className="w-4 h-4 shrink-0" />
+            <span className="leading-snug">Foto Bukti Lapangan</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSection('timeline');
+              document.getElementById('timeline-status')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer ${
+              activeSection === 'timeline'
+                ? 'bg-slate-900 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Clock className="w-4 h-4 shrink-0" />
+            <span className="leading-snug">Timeline Tracking Status</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSection('audit');
+              document.getElementById('audit-pemda')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer ${
+              activeSection === 'audit'
+                ? 'bg-slate-900 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Star className="w-4 h-4 shrink-0" />
+            <span className="leading-snug">Timbang Kembali Hasil Penanganan Pemda</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveSection('diskusi');
+              document.getElementById('diskusi-warga')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left transition-all cursor-pointer ${
+              activeSection === 'diskusi'
+                ? 'bg-slate-900 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 shrink-0" />
+            <span className="leading-snug">Diskusi & Dukungan Warga ({comments.length})</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* SISI KANAN: 5 Kotak Konten Detail */}
+      <main className="flex-1 min-w-0 space-y-5">
       {/* Navigation & Ticket ID */}
       <div className="flex items-center justify-between">
         <Link
@@ -197,15 +296,17 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
           {report.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-          <span className="flex items-center gap-1 text-slate-600">
-            <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+        <div className="space-y-1.5 text-xs text-slate-700">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <span>{report.address}</span>
-          </span>
-          <span>•</span>
-          <span>Pelapor: <strong className="font-medium text-slate-700">{report.reporter_name || 'Anonim'}</strong></span>
-          <span>•</span>
-          <span>Instansi: <strong className="font-medium text-slate-700">{report.agency}</strong></span>
+          </div>
+          <div>
+            Pelapor: <strong className="font-semibold text-slate-900">{report.reporter_name || 'Anonim'}</strong>
+          </div>
+          <div>
+            Instansi: <strong className="font-semibold text-slate-900">{report.agency}</strong>
+          </div>
         </div>
 
         <p className="text-sm text-slate-700 leading-relaxed pt-2 border-t border-slate-100">
@@ -234,7 +335,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
       </section>
 
       {/* Photo Comparison (Before vs After) */}
-      <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
+      <section id="foto-bukti" className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4 scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Foto Bukti Lapangan</h2>
@@ -291,7 +392,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
       </section>
 
       {/* Timeline Tracking Status */}
-      <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
+      <section id="timeline-status" className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4 scroll-mt-20">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Timeline Tracking Status</h2>
           <p className="text-xs text-slate-500">Progres penanganan dinas terkait secara transparan.</p>
@@ -329,7 +430,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
       </section>
 
       {/* Citizen Review & Satisfaction Audit & KPI Penalty */}
-      <section className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4 shadow-2xs">
+      <section id="audit-pemda" className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4 shadow-2xs scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -459,7 +560,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
       )}
 
       {/* Citizen Discussions & Petisi Signing */}
-      <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
+      <section id="diskusi-warga" className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4 scroll-mt-20">
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
@@ -539,6 +640,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
           )}
         </div>
       </section>
+      </main>
     </div>
   );
 }

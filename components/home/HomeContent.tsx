@@ -25,7 +25,7 @@ export function HomeContent({
 }: {
   initialReports: Report[];
   notices?: PublicNotice[];
-  cityRankings?: any[];
+  cityRankings?: Record<string, unknown>[];
 }) {
   const supabase = createClient();
   const [reports, setReports] = useState<Report[]>(initialReports);
@@ -36,20 +36,32 @@ export function HomeContent({
   const [searchQuery, setSearchQuery] = useState('');
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(new Set());
 
-  // Listen for #peta in URL to instantly switch to map tab
+  // Listen for URL params or hash to switch tab/city
   useEffect(() => {
-    const checkHash = () => {
-      if (typeof window !== 'undefined' && window.location.hash === '#peta') {
+    const checkUrl = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get('city');
+      if (c) setSelectedCity(c);
+      const t = params.get('tab');
+      if (t === 'onprocess' || t === 'petition' || t === 'map') {
+        setActiveTab(t);
+      }
+      if (window.location.hash === '#peta') {
         setActiveTab('map');
         setTimeout(() => {
           const el = document.getElementById('peta');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }, 150);
+      } else if (window.location.hash === '#onprocess') {
+        setActiveTab('onprocess');
+      } else if (window.location.hash === '#petition') {
+        setActiveTab('petition');
       }
     };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    checkUrl();
+    window.addEventListener('hashchange', checkUrl);
+    return () => window.removeEventListener('hashchange', checkUrl);
   }, []);
 
   // Handle instant petition sign / upvote
@@ -241,13 +253,13 @@ export function HomeContent({
             </div>
 
             {/* 4. Results counter & Sort status */}
-            <div className="flex items-center justify-between text-xs text-slate-400 px-1 pt-1">
-              <span>
-                Menampilkan <strong className="font-semibold text-slate-600">{displayedReports.length}</strong> laporan di Jabodetabek
-              </span>
-              <span className="text-slate-500 font-medium">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-900 px-1 pt-1">
+              <strong className="font-bold text-slate-900">
+                Menampilkan {displayedReports.length} laporan di Jabodetabek
+              </strong>
+              <strong className="font-bold text-slate-900">
                 {activeTab === 'onprocess' ? 'Status: Sedang Dikerjakan' : 'Urutan: Petisi Tertinggi'}
-              </span>
+              </strong>
             </div>
 
             {/* 5. Report Cards List */}
@@ -309,7 +321,7 @@ export function HomeContent({
                         {/* Details */}
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <Link href={`/laporan/${rep.ticket_number}`} className="block group">
-                            <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-rose-600 transition-colors leading-snug line-clamp-1">
+                            <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-slate-600 group-active:text-slate-700 transition-colors leading-snug line-clamp-1">
                               {rep.title}
                             </h3>
                           </Link>
