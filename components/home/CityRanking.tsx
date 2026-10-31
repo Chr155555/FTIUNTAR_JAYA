@@ -66,7 +66,7 @@ export function CityRanking({ rankings }: { rankings?: any[] } = {}) {
 
             {/* Badge */}
             <div>
-              <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-100">
+              <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-900 border border-slate-200">
                 {item.badge}
               </span>
             </div>
