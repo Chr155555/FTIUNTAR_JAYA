@@ -21,12 +21,26 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+
+function isStaffAccount(role?: string, email?: string): boolean {
+  const r = (role || '').toLowerCase();
+  return (
+    r === 'admin' ||
+    r === 'super_admin' ||
+    r === 'government' ||
+    r === 'gov_admin' ||
+    email === 'admin@suarawarga.id' ||
+    Boolean(email?.endsWith('.go.id'))
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [profileRole, setProfileRole] = useState<string>('CITIZEN');
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -70,6 +84,11 @@ export function Navbar() {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUser(data.user);
       loadNotifications(data.user?.id);
+      if (data.user?.id) {
+        supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: p }) => {
+          if (p?.role) setProfileRole(p.role);
+        });
+      }
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -140,7 +159,7 @@ export function Navbar() {
   const navItems = [
     { href: '/', label: 'Beranda & FYP', icon: Compass },
     { href: '/peta', label: 'Peta Jabodetabek', icon: MapPin },
-    { href: '/#kpi', label: 'KPI Kota', icon: Award },
+    { href: '/kpi', label: 'KPI Kota', icon: Award },
     { href: '/gov-admin', label: 'Portal Pemda', icon: ShieldCheck },
     ...(isAdmin ? [{ href: '/admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
   ];
@@ -268,11 +287,11 @@ export function Navbar() {
 
                 <div className="px-3.5 pt-2 border-t border-slate-100 text-center">
                   <Link
-                    href="/profile"
+                    href={!isStaffAccount(profileRole, currentUser?.email) ? '/profile' : '/profile?tab=notifications'}
                     onClick={() => setShowNotifications(false)}
                     className="text-[11px] text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1"
                   >
-                    <span>Buka Riwayat Laporan Saya</span>
+                    <span>{!isStaffAccount(profileRole, currentUser?.email) ? 'Buka Riwayat Laporan Saya' : 'Buka Notifikasi Saya'}</span>
                     <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
