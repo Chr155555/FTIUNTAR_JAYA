@@ -127,6 +127,7 @@ export function Navbar() {
     await fetch('/api/auth/logout', { method: 'POST' });
     await supabase.auth.signOut();
     setCurrentUser(null);
+    setProfileRole('CITIZEN');
     router.push('/');
     router.refresh();
   };
@@ -153,14 +154,20 @@ export function Navbar() {
     return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   };
 
-  const isAdmin =
-    currentUser?.user_metadata?.role === 'admin' || currentUser?.email === 'admin@suarawarga.id';
+  const isStaff = Boolean(currentUser && isStaffAccount(profileRole, currentUser?.email));
+  const isAdmin = Boolean(
+    currentUser &&
+    (profileRole === 'admin' ||
+      profileRole === 'SUPER_ADMIN' ||
+      currentUser?.user_metadata?.role === 'admin' ||
+      currentUser?.email === 'admin@suarawarga.id')
+  );
 
   const navItems = [
     { href: '/', label: 'Beranda & FYP', icon: Compass },
     { href: '/peta', label: 'Peta Jabodetabek', icon: MapPin },
     { href: '/kpi', label: 'KPI Kota', icon: Award },
-    { href: '/gov-admin', label: 'Portal Pemda', icon: ShieldCheck },
+    ...(isStaff ? [{ href: '/gov-admin', label: 'Portal Pemda', icon: ShieldCheck }] : []),
     ...(isAdmin ? [{ href: '/admin', label: 'Admin Panel', icon: ShieldCheck }] : []),
   ];
 
@@ -205,7 +212,7 @@ export function Navbar() {
         {/* Actions & Notifications & Profile */}
         <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/lapor"
+            href={currentUser ? '/lapor' : '/auth'}
             className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xs transition-colors"
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -214,6 +221,7 @@ export function Navbar() {
           </Link>
 
           {/* Interactive Live Notifications Bell */}
+          {currentUser && (
           <div className="relative" ref={notifRef}>
             <button
               type="button"
@@ -298,6 +306,8 @@ export function Navbar() {
               </div>
             )}
           </div>
+
+                    )}
 
           {/* User Account State */}
           {currentUser ? (

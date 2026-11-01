@@ -306,7 +306,7 @@ export function KpiContent({ initialRankings, totalReports = 9, totalPenalties =
                           </div>
                           <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-emerald-500"
+                              className="h-full rounded-full bg-yellow-400"
                               style={{ width: `${item.resolved_rate}%` }}
                             />
                           </div>

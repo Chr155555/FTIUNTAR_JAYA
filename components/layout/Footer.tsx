@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 
 export function Footer() {
   return (
@@ -10,9 +10,7 @@ export function Footer() {
         {/* Brand column */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0">
-              <Image src="/logo-icon.png" alt="SuaraWarga Logo" width={36} height={36} className="w-full h-full object-contain" />
-            </div>
+            <BrandLogo className="w-8 h-8" />
             <span className="text-white font-bold text-lg tracking-tight">SuaraWarga</span>
           </div>
           <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
