@@ -1,20 +1,159 @@
-// Category -> Agency auto-routing
-export const AGENCY_ROUTING: Record<string, string> = {
-  'Jalan Rusak': 'Dinas Bina Marga',
-  'Banjir & Drainase': 'Dinas Sumber Daya Air (SDA) / PUPR',
-  'Lampu Jalan (PJU)': 'Dinas Perhubungan (Dishub)',
-  'Sampah & Kebersihan': 'Dinas Lingkungan Hidup (DLH)',
-  'Fasilitas Umum & Taman': 'Dinas Pertamanan & Perkim',
-};
-
-export const CATEGORIES = [
-  'Jalan Rusak',
-  'Banjir & Drainase',
-  'Lampu Jalan (PJU)',
-  'Sampah & Kebersihan',
-  'Fasilitas Umum & Taman',
+// ==========================================
+// Kategori Multi-Sektor (dikelompokkan dalam kluster)
+// ==========================================
+export const CATEGORY_CLUSTERS = [
+  {
+    id: 'infrastruktur',
+    label: 'Infrastruktur Fisik',
+    categories: [
+      { name: 'Jalan Rusak', agency: 'Dinas Bina Marga' },
+      { name: 'Banjir & Drainase', agency: 'Dinas Sumber Daya Air (SDA) / PUPR' },
+      { name: 'Lampu Jalan (PJU)', agency: 'Dinas Perhubungan (Dishub)' },
+      { name: 'Sampah & Kebersihan', agency: 'Dinas Lingkungan Hidup (DLH)' },
+      { name: 'Fasilitas Umum & Taman', agency: 'Dinas Pertamanan & Perkim' },
+    ],
+  },
+  {
+    id: 'kesehatan-sosial',
+    label: 'Fasilitas Kesehatan/Sosial',
+    categories: [
+      { name: 'Puskesmas & Layanan Kesehatan', agency: 'Dinas Kesehatan' },
+      { name: 'Sanitasi & Air Bersih', agency: 'Dinas Kesehatan & PDAM' },
+      { name: 'Bantuan Sosial & Kesejahteraan', agency: 'Dinas Sosial' },
+      { name: 'Sekolah & Fasilitas Pendidikan', agency: 'Dinas Pendidikan' },
+    ],
+  },
+  {
+    id: 'layanan-publik',
+    label: 'Layanan Publik/Birokrasi',
+    categories: [
+      { name: 'Pelayanan Administrasi (KTP/KK)', agency: 'Dinas Dukcapil' },
+      { name: 'Perizinan & Pungli', agency: 'Dinas Penanaman Modal & PTSP' },
+      { name: 'Transportasi Umum', agency: 'Dinas Perhubungan (Dishub)' },
+      { name: 'Keamanan & Ketertiban', agency: 'Satpol PP' },
+    ],
+  },
 ] as const;
 
+export const CATEGORIES = CATEGORY_CLUSTERS.flatMap((c) => c.categories.map((x) => x.name));
+
+// Category -> Agency auto-routing
+export const AGENCY_ROUTING: Record<string, string> = Object.fromEntries(
+  CATEGORY_CLUSTERS.flatMap((c) => c.categories.map((x) => [x.name, x.agency]))
+);
+
+export function getClusterOfCategory(category: string): string | null {
+  const cl = CATEGORY_CLUSTERS.find((c) => c.categories.some((x) => x.name === category));
+  return cl ? cl.id : null;
+}
+
+// ==========================================
+// Tag Cepat
+// ==========================================
+export const QUICK_TAGS: { tag: string; category: string }[] = [
+  { tag: 'JalanBerlubang', category: 'Jalan Rusak' },
+  { tag: 'AspalAmblas', category: 'Jalan Rusak' },
+  { tag: 'DrainaseMampet', category: 'Banjir & Drainase' },
+  { tag: 'BanjirRob', category: 'Banjir & Drainase' },
+  { tag: 'PJUMati', category: 'Lampu Jalan (PJU)' },
+  { tag: 'SampahMenumpuk', category: 'Sampah & Kebersihan' },
+  { tag: 'TamanRusak', category: 'Fasilitas Umum & Taman' },
+  { tag: 'Puskesmas', category: 'Puskesmas & Layanan Kesehatan' },
+  { tag: 'AntrianRS', category: 'Puskesmas & Layanan Kesehatan' },
+  { tag: 'AirBersih', category: 'Sanitasi & Air Bersih' },
+  { tag: 'BansosTidakTepat', category: 'Bantuan Sosial & Kesejahteraan' },
+  { tag: 'SekolahRusak', category: 'Sekolah & Fasilitas Pendidikan' },
+  { tag: 'KTPLambat', category: 'Pelayanan Administrasi (KTP/KK)' },
+  { tag: 'Pungli', category: 'Perizinan & Pungli' },
+  { tag: 'AngkotHalte', category: 'Transportasi Umum' },
+  { tag: 'Premanisme', category: 'Keamanan & Ketertiban' },
+];
+
+/** Ekstrak hashtag (huruf kecil, tanpa #) dari teks. */
+export function extractTags(text: string | null | undefined): string[] {
+  if (!text) return [];
+  return Array.from(text.matchAll(/#([\p{L}\p{N}_]+)/gu)).map((m) => m[1].toLowerCase());
+}
+
+/** Apakah laporan memiliki tag tertentu (di judul/deskripsi). */
+export function reportHasTag(
+  r: { title: string; description?: string | null },
+  tag: string
+): boolean {
+  const t = tag.toLowerCase().replace(/^#/, '');
+  return extractTags(`${r.title} ${r.description || ''}`).includes(t);
+}
+
+// ==========================================
+// Aduan Serupa
+// ==========================================
+export function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+const STOPWORDS = new Set(['yang', 'di', 'dan', 'ke', 'dari', 'ini', 'itu', 'untuk', 'dengan', 'sudah', 'sangat', 'jalan', 'dekat', 'depan']);
+
+function tokenize(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+  );
+}
+
+export interface SimilarCandidate {
+  id: string;
+  ticket_number: string;
+  title: string;
+  description?: string | null;
+  category: string;
+  city: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+  upvote_count: number;
+}
+
+/** Cari aduan mirip: radius, kota, kategori, dan kemiripan teks. */
+export function findSimilarReports<T extends SimilarCandidate>(
+  candidates: T[],
+  q: { lat: number; lng: number; city: string; category: string; text: string },
+  radiusKm = 1,
+  limit = 5
+): (T & { distance: number; score: number })[] {
+  const qt = tokenize(q.text);
+  return candidates
+    .filter((c) => c.status !== 'Selesai' && c.status !== 'Ditolak')
+    .map((c) => {
+      const distance = distanceKm(q.lat, q.lng, c.latitude, c.longitude);
+      const ct = tokenize(`${c.title} ${c.address}`);
+      let overlap = 0;
+      qt.forEach((w) => ct.has(w) && overlap++);
+      const textSim = qt.size ? overlap / qt.size : 0;
+      const near = distance <= radiusKm;
+      const sameCategory = c.category === q.category;
+      const sameCity = isSameCity(c.city, q.city);
+      let score = 0;
+      if (near) score += 3 - distance / radiusKm; // 2..3
+      else if (sameCity) score += 0.5;
+      if (sameCategory) score += 2;
+      score += textSim * 3;
+      const relevant = (near && sameCategory) || (sameCity && sameCategory && textSim >= 0.3) || textSim >= 0.5 && sameCity;
+      return { ...c, distance, score: relevant ? score : 0 };
+    })
+    .filter((c) => c.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
 // Focused exclusively on JABODETABEK (Jakarta, Bogor, Depok, Tangerang, Bekasi)
 export const CITIES = [
   'Jakarta Barat',
@@ -156,3 +295,21 @@ export const JABODETABEK_CITY_RANKINGS = [
 
 // Alias for backwards compatibility
 export const CITY_RANKINGS = JABODETABEK_CITY_RANKINGS;
+
+export interface CategoryFilterState {
+  cluster: string; // 'Semua' atau id kluster
+  category: string; // 'Semua' atau nama kategori
+  tag: string; // '' atau nama tag
+}
+
+export const EMPTY_CATEGORY_FILTER: CategoryFilterState = { cluster: 'Semua', category: 'Semua', tag: '' };
+
+export function matchesCategoryFilter(
+  r: { category: string; title: string; description?: string | null },
+  f: CategoryFilterState
+): boolean {
+  if (f.category !== 'Semua' && r.category !== f.category) return false;
+  if (f.cluster !== 'Semua' && getClusterOfCategory(r.category) !== f.cluster) return false;
+  if (f.tag && !reportHasTag(r, f.tag)) return false;
+  return true;
+}
