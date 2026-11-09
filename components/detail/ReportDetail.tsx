@@ -22,6 +22,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { TrackingProgressBar } from '@/components/tracking/TrackingProgressBar';
 import { createClient } from '@/lib/supabase/client';
 import type { Report, ReportTimeline, Comment } from '@/lib/types';
 
@@ -378,7 +379,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
                 <>
                   <img src={report.after_image_url} alt="Sesudah" className="w-full h-full object-cover" />
                   <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-700/85 text-white text-[11px] font-medium backdrop-blur-xs">
-                    Kondisi Sesudah ✓
+                    Kondisi Sesudah
                   </div>
                 </>
               ) : (
@@ -391,43 +392,8 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
         </div>
       </section>
 
-      {/* Timeline Tracking Status */}
-      <section id="timeline-status" className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4 scroll-mt-20">
-        <div>
-          <h2 className="text-base font-semibold text-slate-900">Timeline Tracking Status</h2>
-          <p className="text-xs text-slate-500">Progres penanganan dinas terkait secara transparan.</p>
-        </div>
-
-        <div className="space-y-0.5 pt-1">
-          {timelines.map((item, idx) => (
-            <div key={item.id} className="flex items-start gap-3.5">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    item.is_done
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-400 border border-slate-200'
-                  }`}
-                >
-                  {item.is_done ? <Check className="w-3.5 h-3.5" /> : idx + 1}
-                </div>
-                {idx < timelines.length - 1 && (
-                  <div className={`w-px h-10 my-1 ${item.is_done ? 'bg-slate-300' : 'bg-slate-200'}`} />
-                )}
-              </div>
-              <div className="flex-1 pb-3">
-                <div className="flex items-center justify-between gap-1">
-                  <h4 className={`text-xs font-semibold ${item.is_done ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {item.step_title}
-                  </h4>
-                  <span className="text-[11px] text-slate-400">{timeAgo(item.timestamp)}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Interactive Tracking System */}
+      <TrackingProgressBar report={report} timelines={timelines} />
 
       {/* Citizen Review & Satisfaction Audit & KPI Penalty */}
       <section id="audit-pemda" className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4 shadow-2xs scroll-mt-20">
@@ -514,7 +480,7 @@ export function ReportDetail({ report, timelines, comments: initialComments }: P
 
             {kpiReportSubmitted ? (
               <div className="p-4 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs text-center font-medium">
-                ✓ Komplain penalti KPI berhasil dikirim dan diverifikasi sistem audit warga!
+                Komplain penalti KPI berhasil dikirim dan diverifikasi sistem audit warga!
               </div>
             ) : (
               <form onSubmit={handlePenaltySubmit} className="space-y-3">
