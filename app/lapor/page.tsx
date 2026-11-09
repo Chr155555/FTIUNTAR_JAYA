@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   MapPin,
@@ -15,9 +16,19 @@ import {
   Camera,
   Trash2,
   ImageIcon,
+  Copy,
+  ThumbsUp,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { CATEGORIES, CITIES, AGENCY_ROUTING, JABODETABEK_COORDS } from '@/lib/constants';
+import {
+  CATEGORY_CLUSTERS,
+  QUICK_TAGS,
+  CITIES,
+  AGENCY_ROUTING,
+  JABODETABEK_COORDS,
+  findSimilarReports,
+  type SimilarCandidate,
+} from '@/lib/constants';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
 
 export default function LaporPage() {
@@ -58,6 +69,70 @@ export default function LaporPage() {
     photoUrl: '',
     isAnonymous: false,
   });
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [existingReports, setExistingReports] = useState<SimilarCandidate[]>([]);
+
+  useEffect(() => {
+    if (checkingAuth) return;
+    supabase
+      .from('reports')
+      .select('id,ticket_number,title,description,category,city,address,latitude,longitude,status,upvote_count')
+      .not('status', 'in', '("Selesai","Ditolak")')
+      .order('created_at', { ascending: false })
+      .limit(500)
+      .then(({ data }) => setExistingReports((data as SimilarCandidate[]) || []));
+  }, [checkingAuth, supabase]);
+
+  const similarReports = useMemo(
+    () =>
+      findSimilarReports(existingReports, {
+        lat: form.lat,
+        lng: form.lng,
+        city: form.city,
+        category: form.category,
+        text: `${form.title} ${form.address}`,
+      }),
+    [existingReports, form.lat, form.lng, form.city, form.category, form.title, form.address]
+  );
+
+  const toggleTag = (tag: string, category: string) => {
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+    if (!selectedTags.includes(tag)) setForm((p) => ({ ...p, category }));
+  };
+
+  const SimilarPanel = () =>
+    similarReports.length === 0 ? null : (
+      <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+          <Copy className="w-4 h-4 shrink-0" />
+          <span>Aduan Serupa di Sekitar Anda ({similarReports.length})</span>
+        </div>
+        <p className="text-[11px] text-amber-800">
+          Sudah ada aduan mirip. Dukung (upvote) aduan tersebut agar tidak terjadi laporan ganda.
+        </p>
+        <div className="space-y-1.5">
+          {similarReports.map((s) => (
+            <Link
+              key={s.id}
+              href={`/laporan/${s.ticket_number}`}
+              target="_blank"
+              className="block p-2.5 rounded-lg bg-white border border-amber-200 hover:border-amber-400 transition-colors"
+            >
+              <div className="text-xs font-semibold text-slate-900 line-clamp-1">{s.title}</div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 mt-0.5">
+                <span>{s.category}</span>
+                <span>&bull; {s.distance < 1 ? `${Math.round(s.distance * 1000)} m` : `${s.distance.toFixed(1)} km`}</span>
+                <span>&bull; {s.status}</span>
+                <span className="inline-flex items-center gap-0.5">
+                  • <ThumbsUp className="w-3 h-3" /> {s.upvote_count}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
 
   const agency = AGENCY_ROUTING[form.category] || 'Dinas Terkait Pemda';
 
@@ -164,8 +239,9 @@ export default function LaporPage() {
           ticket_number: ticketNumber,
           title: form.title.trim(),
           description:
-            form.description.trim() ||
-            'Mohon segera ditindaklanjuti oleh dinas terkait untuk keamanan masyarakat.',
+            (form.description.trim() ||
+              'Mohon segera ditindaklanjuti oleh dinas terkait untuk keamanan masyarakat.') +
+            (selectedTags.length ? '\n\n' + selectedTags.map((t) => '#' + t).join(' ') : ''),
           category: form.category,
           city: form.city,
           address: form.address.trim(),
@@ -374,21 +450,53 @@ export default function LaporPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setForm((p) => ({ ...p, category: cat }))}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${form.category === cat
-                      ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
-                      : 'border-slate-200/80 bg-white hover:border-slate-300'
-                    }`}
-                >
-                  <div className="font-semibold text-xs sm:text-sm text-slate-900">{cat}</div>
-                </button>
+            <div className="space-y-4">
+              {CATEGORY_CLUSTERS.map((cluster) => (
+                <div key={cluster.id} className="space-y-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {cluster.label}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {cluster.categories.map(({ name: cat }) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setForm((p) => ({ ...p, category: cat }))}
+                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${form.category === cat
+                            ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
+                            : 'border-slate-200/80 bg-white hover:border-slate-300'
+                          }`}
+                      >
+                        <div className="font-semibold text-xs sm:text-sm text-slate-900">{cat}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+
+            <div className="space-y-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Tag Cepat (opsional)
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_TAGS.map(({ tag, category }) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag, category)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${selectedTags.includes(tag)
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
+                      }`}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {SimilarPanel()}
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
               <div>
@@ -444,6 +552,8 @@ export default function LaporPage() {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-slate-400"
               />
             </div>
+
+            {SimilarPanel()}
 
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -638,6 +748,11 @@ export default function LaporPage() {
                 <span className="text-slate-400 block mb-0.5">Judul Masalah:</span>
                 <span className="font-semibold text-slate-900">{form.title}</span>
               </div>
+              {selectedTags.length > 0 && (
+                <div className="pt-2 border-t border-slate-200 text-slate-700 font-medium">
+                  {selectedTags.map((t) => '#' + t).join(' ')}
+                </div>
+              )}
               {form.photoUrl && (
                 <div className="pt-2 border-t border-slate-200 flex items-center gap-2">
                   <span className="text-slate-400">Foto Bukti:</span>

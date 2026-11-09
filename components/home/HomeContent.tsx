@@ -16,7 +16,8 @@ import { ReportProgressPill } from '@/components/tracking/ReportProgressPill';
 import { AnnouncementBanner } from '@/components/home/AnnouncementBanner';
 import { CityRanking } from '@/components/home/CityRanking';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
-import { CITIES, isSameCity } from '@/lib/constants';
+import { CITIES, isSameCity, matchesCategoryFilter, EMPTY_CATEGORY_FILTER, type CategoryFilterState } from '@/lib/constants';
+import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { createClient } from '@/lib/supabase/client';
 import type { Report, PublicNotice } from '@/lib/types';
 
@@ -36,6 +37,7 @@ export function HomeContent({
   const [activeTab, setActiveTab] = useState<'petition' | 'onprocess' | 'map'>('petition');
   const [selectedCity, setSelectedCity] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
+  const [catFilter, setCatFilter] = useState<CategoryFilterState>(EMPTY_CATEGORY_FILTER);
   const [upvotedIds, setUpvotedIds] = useState<Set<string>>(new Set());
 
   // Listen for URL params or hash to switch tab/city
@@ -103,6 +105,7 @@ export function HomeContent({
     return reports
       .filter((r) => {
         if (!isSameCity(r.city, selectedCity)) return false;
+        if (!matchesCategoryFilter(r, catFilter)) return false;
 
         // On-Process filter
         if (activeTab === 'onprocess' && r.status !== 'On-Process') return false;
@@ -128,7 +131,7 @@ export function HomeContent({
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-  }, [reports, activeTab, selectedCity, searchQuery]);
+  }, [reports, activeTab, selectedCity, searchQuery, catFilter]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -239,7 +242,7 @@ export function HomeContent({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari jalan rusak, banjir, drainase, no. tiket, atau lokasi di Jabodetabek..."
+                placeholder="Cari jalan rusak, puskesmas, KTP, #tag, no. tiket, atau lokasi di Jabodetabek..."
                 className="w-full pl-11 pr-10 py-2.5 bg-white border border-slate-200/90 rounded-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 shadow-2xs transition-all"
               />
               {searchQuery && (
@@ -252,6 +255,8 @@ export function HomeContent({
                 </button>
               )}
             </div>
+
+            <CategoryFilter value={catFilter} onChange={setCatFilter} />
 
             {/* 4. Results counter & Sort status */}
             <div className="flex items-center justify-between text-xs font-bold text-slate-900 px-1 pt-1">
@@ -275,6 +280,7 @@ export function HomeContent({
                   type="button"
                   onClick={() => {
                     setSelectedCity('Semua');
+                    setCatFilter(EMPTY_CATEGORY_FILTER);
                     setSearchQuery('');
                   }}
                   className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-medium cursor-pointer hover:bg-slate-800 transition-colors"

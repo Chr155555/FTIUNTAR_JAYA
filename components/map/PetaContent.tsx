@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, MapPin, ArrowRight, Filter, Sparkles } from 'lucide-react';
-import { CITIES, CATEGORIES, isSameCity } from '@/lib/constants';
+import { CITIES, isSameCity, matchesCategoryFilter, EMPTY_CATEGORY_FILTER, type CategoryFilterState } from '@/lib/constants';
+import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
 import type { Report } from '@/lib/types';
@@ -16,13 +17,13 @@ interface PetaContentProps {
 export function PetaContent({ reports, liveRankings }: PetaContentProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('Semua');
-  const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [catFilter, setCatFilter] = useState<CategoryFilterState>(EMPTY_CATEGORY_FILTER);
 
   // Filter reports according to search query, city, and category
   const filteredReports = useMemo(() => {
     return reports.filter((rep) => {
       if (!isSameCity(rep.city, selectedCity)) return false;
-      if (selectedCategory !== 'Semua' && rep.category !== selectedCategory) return false;
+      if (!matchesCategoryFilter(rep, catFilter)) return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -38,7 +39,9 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
 
       return true;
     });
-  }, [reports, selectedCity, selectedCategory, searchQuery]);
+  }, [reports, selectedCity, catFilter, searchQuery]);
+
+  const mapReports = useMemo(() => reports.filter((r) => matchesCategoryFilter(r, catFilter)), [reports, catFilter]);
 
   return (
     <div className="space-y-6">
@@ -102,6 +105,8 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
           ))}
         </div>
 
+        <CategoryFilter value={catFilter} onChange={setCatFilter} />
+
         {/* Active Filters Bar */}
         {(selectedCity !== 'Semua' || searchQuery) && (
           <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-100 text-xs">
@@ -149,7 +154,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
       {/* Main MapLibre Map Container */}
       <section className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <JabodetabekMap
-          reports={reports}
+          reports={mapReports}
           selectedCity={selectedCity}
           onSelectCity={(c) => setSelectedCity(c)}
           cityRankings={liveRankings}
@@ -187,7 +192,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
               type="button"
               onClick={() => {
                 setSelectedCity('Semua');
-                setSelectedCategory('Semua');
+                setCatFilter(EMPTY_CATEGORY_FILTER);
                 setSearchQuery('');
               }}
               className="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-medium cursor-pointer hover:bg-slate-800 transition-colors"
