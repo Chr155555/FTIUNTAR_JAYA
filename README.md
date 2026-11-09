@@ -192,9 +192,9 @@ Berikut rekapitulasi pengembangan yang telah diimplementasikan sebagai respons t
 ## 👥 10. Anggota Tim Pengembang
 
 **Tim FTI UNTAR JAYA — Universitas Tarumanagara**
-- **Ketua Tim & Fullstack Developer:** Christopher (FTI UNTAR)
-- **UI/UX Designer & Frontend Developer:** Tim FTI UNTAR JAYA
-- **Data Analyst & Quality Assurance:** Tim FTI UNTAR JAYA
+- **Ketua Tim:** Rizki Ardi(FTI UNTAR)
+- **Anggota 1:** Jhon Timothy
+- **Anggota 2:** Christian Rafael
 
 ---
 
