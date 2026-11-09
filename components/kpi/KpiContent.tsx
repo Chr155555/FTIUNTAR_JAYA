@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { JABODETABEK_CITY_RANKINGS } from '@/lib/constants';
+import { PublicAnalyticsDashboard } from './PublicAnalyticsDashboard';
 
 interface Props {
   initialRankings?: any[];
@@ -29,6 +30,7 @@ export function KpiContent({ initialRankings, totalReports = 9, totalPenalties =
   const [selectedProvince, setSelectedProvince] = useState<'all' | 'DKI Jakarta' | 'Jawa Barat' | 'Banten'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = useState<'score' | 'resolved' | 'reports'>('score');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'rankings'>('analytics');
 
   const baseItems = initialRankings && initialRankings.length > 0 ? initialRankings : JABODETABEK_CITY_RANKINGS;
 
@@ -84,6 +86,45 @@ export function KpiContent({ initialRankings, totalReports = 9, totalPenalties =
           </div>
         </div>
       </div>
+
+      {/* View Switcher Tabs (Data-Driven Visualisasi vs Peringkat KPI) */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('analytics')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'analytics'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Dashboard Analitik & Visualisasi Isu</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold ml-0.5">
+            Data-Driven
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('rankings')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'rankings'
+              ? 'bg-slate-900 text-white shadow-2xs'
+              : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          <span>Tabel Peringkat & Kinerja 7 Kota</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold ml-0.5">
+            Akuntabilitas
+          </span>
+        </button>
+      </div>
+
+      {activeTab === 'analytics' ? (
+        <PublicAnalyticsDashboard />
+      ) : (
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* LEFT SIDEBAR: FILTER WILAYAH & METRIK */}
@@ -359,6 +400,7 @@ export function KpiContent({ initialRankings, totalReports = 9, totalPenalties =
           </div>
         </main>
       </div>
+      )}
     </div>
   );
 }
