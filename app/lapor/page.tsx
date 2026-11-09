@@ -296,7 +296,7 @@ export default function LaporPage() {
                 1. Pilih Wilayah Jabodetabek & Titik Lokasi
               </h2>
               <p className="text-xs text-slate-500">
-                Klik pada peta Jabodetabek (OpenFreeMaps Bright Mode) untuk menandai koordinat tepat.
+                Klik pada peta Jabodetabek untuk menandai koordinat tepat laporan Anda.
               </p>
             </div>
 
@@ -641,7 +641,7 @@ export default function LaporPage() {
               {form.photoUrl && (
                 <div className="pt-2 border-t border-slate-200 flex items-center gap-2">
                   <span className="text-slate-400">Foto Bukti:</span>
-                  <span className="text-emerald-700 font-semibold">✓ Foto terlampir dari perangkat</span>
+                  <span className="text-emerald-700 font-semibold">Foto terlampir dari perangkat</span>
                 </div>
               )}
             </div>

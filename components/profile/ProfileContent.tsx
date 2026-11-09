@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Bell, CheckCircle2, LogOut, User } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ReportProgressPill } from '@/components/tracking/ReportProgressPill';
 import { createClient } from '@/lib/supabase/client';
 import type { Report, Notification } from '@/lib/types';
 
@@ -214,7 +215,7 @@ export function ProfileContent({ reports, notifications: initialNotifs }: Props)
                   </p>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium shrink-0">
-                  Didukung ✓
+                  Didukung
                 </span>
               </div>
             </Link>

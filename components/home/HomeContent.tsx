@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Search,
+  X,
   MapPin,
   ThumbsUp,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { ReportProgressPill } from '@/components/tracking/ReportProgressPill';
 import { AnnouncementBanner } from '@/components/home/AnnouncementBanner';
 import { CityRanking } from '@/components/home/CityRanking';
 import { JabodetabekMap } from '@/components/map/JabodetabekMap';
@@ -245,9 +247,8 @@ export function HomeContent({
                   type="button"
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer transition-colors"
-                  title="Hapus pencarian"
-                >
-                  ✕
+                  title="Hapus pencarian">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>

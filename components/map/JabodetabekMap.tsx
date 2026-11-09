@@ -61,10 +61,10 @@ export function JabodetabekMap({
         mapInstanceRef.current = null;
       }
 
-      // Initialize MapLibre with OpenFreeMap Bright mode style
+      // Initialize MapLibre with OpenFreeMap Positron minimalist mode style
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: 'https://tiles.openfreemap.org/styles/bright',
+        style: 'https://tiles.openfreemap.org/styles/positron',
         center: [106.8272, -6.2], // [lng, lat] for Jabodetabek center
         zoom: 10.8,
         minZoom: 8,
@@ -74,13 +74,6 @@ export function JabodetabekMap({
 
       // Controls
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-      map.addControl(
-        new maplibregl.AttributionControl({
-          compact: true,
-          customAttribution: '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-        }),
-        'bottom-left'
-      );
 
       map.on('error', (e: any) => {
         console.warn('MapLibre notice:', e);
@@ -114,7 +107,7 @@ export function JabodetabekMap({
           el.className = 'custom-pin-picker animate-bounce';
           el.style.cursor = 'pointer';
           el.innerHTML = `
-            <div style="background-color: #e11d48; width: 30px; height: 30px; border-radius: 9999px; border: 2.5px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer;">
+            <div style="background-color: #0f172a; width: 32px; height: 32px; border-radius: 9999px; border: 2.5px solid white; box-shadow: 0 4px 14px rgba(15,23,42,0.3); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
           `;
@@ -171,50 +164,51 @@ export function JabodetabekMap({
         if (!matches) return;
       }
 
-      const color =
+      const dotColor =
         rep.status === 'Selesai'
           ? '#10b981' // Emerald
           : rep.status === 'On-Process'
           ? '#f59e0b' // Amber
           : rep.status === 'Ditolak'
           ? '#94a3b8' // Slate
-          : '#e11d48'; // Rose (Menunggu / Prioritas)
+          : '#e11d48'; // Rose
 
       const el = document.createElement('div');
       el.className = 'openfreemap-report-pin';
       el.style.cursor = 'pointer';
       el.innerHTML = `
         <div style="
-          background-color: ${color};
-          color: white;
+          background-color: #ffffff;
+          color: #0f172a;
           font-size: 11px;
           font-weight: 700;
-          padding: 3px 8px;
+          padding: 2.5px 8px;
           border-radius: 9999px;
-          border: 2px solid white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+          border: 1.5px solid #cbd5e1;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
           display: flex;
           align-items: center;
-          gap: 3px;
+          gap: 4px;
           white-space: nowrap;
           cursor: pointer;
           user-select: none;
           pointer-events: auto;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        " onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='9999';" onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';">
+          transition: all 0.15s ease;
+        " onmouseover="this.style.borderColor='#0f172a'; this.style.transform='scale(1.1)'; this.style.zIndex='9999'; this.style.boxShadow='0 4px 14px rgba(15, 23, 42, 0.18)';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.transform='scale(1)'; this.style.zIndex='auto'; this.style.boxShadow='0 2px 8px rgba(15, 23, 42, 0.1)';">
+          <span style="width: 6px; height: 6px; border-radius: 9999px; background-color: ${dotColor}; flex-shrink: 0;"></span>
           <span>${rep.status === 'Selesai' ? '✓' : rep.upvote_count}</span>
         </div>
       `;
 
       const popupHtml = `
-        <div style="width: 240px; font-family: system-ui, sans-serif;">
+        <div style="width: 240px; font-family: system-ui, -apple-system, sans-serif; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.12);">
           <div style="position: relative; height: 110px; background-color: #f1f5f9; overflow: hidden;">
             <img src="${rep.before_image_url}" style="width: 100%; height: 100%; object-fit: cover;" />
             <span style="position: absolute; top: 8px; left: 8px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 9999px; background: rgba(15, 23, 42, 0.85); color: white;">
               ${rep.city}
             </span>
           </div>
-          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; background: #ffffff;">
             <div style="font-size: 11px; font-weight: 700; color: #0f172a; line-height: 1.3;">
               ${rep.title}
             </div>
@@ -222,10 +216,11 @@ export function JabodetabekMap({
               ${rep.address}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px solid #f1f5f9;">
-              <span style="font-size: 10px; font-weight: 600; color: ${color};">
-                ● ${rep.status}
+              <span style="font-size: 10px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px;">
+                <span style="width: 5px; height: 5px; border-radius: 9999px; background-color: ${dotColor};"></span>
+                ${rep.status}
               </span>
-              <a href="/laporan/${rep.ticket_number}" style="font-size: 10px; font-weight: 600; color: #e11d48; text-decoration: none;">
+              <a href="/laporan/${rep.ticket_number}" style="font-size: 10px; font-weight: 600; color: #0f172a; text-decoration: none;">
                 Buka Detail →
               </a>
             </div>
@@ -279,20 +274,20 @@ export function JabodetabekMap({
       compEl.style.cursor = 'pointer';
       compEl.innerHTML = `
         <div style="
-          background: white;
-          padding: 6px 10px;
-          border-radius: 14px;
-          border: 1.5px solid #fda4af;
-          box-shadow: 0 4px 14px rgba(225, 29, 72, 0.18);
+          background: #ffffff;
+          padding: 6px 12px;
+          border-radius: 12px;
+          border: 1px solid #cbd5e1;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
           text-align: center;
-          font-family: system-ui;
+          font-family: system-ui, -apple-system, sans-serif;
           cursor: pointer;
           user-select: none;
           pointer-events: auto;
-          transition: transform 0.15s ease;
-        " onmouseover="this.style.transform='scale(1.08)';" onmouseout="this.style.transform='scale(1)';">
+          transition: all 0.15s ease;
+        " onmouseover="this.style.borderColor='#0f172a'; this.style.transform='scale(1.06)';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.transform='scale(1)';">
           <div style="font-size: 11px; font-weight: 700; color: #0f172a;">${rank.city}</div>
-          <div style="font-size: 10px; color: #10b981; font-weight: 700;">Tuntas: ${rank.resolved_rate}%</div>
+          <div style="font-size: 10px; color: #059669; font-weight: 600; margin-top: 1px;">Tuntas ${rank.resolved_rate}%</div>
           <div style="font-size: 9px; color: #64748b;">${rank.total_reports} Pengaduan</div>
         </div>
       `;
@@ -414,19 +409,16 @@ export function JabodetabekMap({
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
       {/* Top Map Control Bar */}
       <div className="p-3.5 sm:p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-800 shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-semibold text-slate-900 flex items-center gap-1.5">
-              <span>Peta Sebaran Pengaduan Warga Jabodetabek</span>
-              <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                OpenFreeMaps • Bright Mode
-              </span>
+            <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
+              Peta Sebaran Pengaduan Warga Jabodetabek
             </h3>
             <p className="text-[11px] text-slate-400">
-              Vektor peta terang, tajam, dan cepat berbasis OpenFreeMap.
+              Peta interaktif sebaran masalah dengan tema monokrom bersih.
             </p>
           </div>
         </div>
@@ -485,19 +477,40 @@ export function JabodetabekMap({
           <div ref={mapContainerRef} className="w-full h-full" />
 
           {/* Map Legend Floating */}
-          <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-md p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center gap-3 text-[11px]">
-            <span className="flex items-center gap-1.5 font-medium text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200" /> Selesai
+          <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Selesai
             </span>
-            <span className="flex items-center gap-1.5 font-medium text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200" /> Sedang Dikerjakan
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-amber-500" /> Sedang Dikerjakan
             </span>
-            <span className="flex items-center gap-1.5 font-medium text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-rose-200" /> Prioritas Petisi
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-rose-600" /> Prioritas
             </span>
-            <span className="flex items-center gap-1.5 font-medium text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-400" /> Ditolak
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-slate-400" /> Ditolak
             </span>
+          </div>
+
+          {/* Single Clean Attribution */}
+          <div className="absolute bottom-2.5 left-2.5 z-10 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-2xs text-[10px] text-slate-500 flex items-center gap-1.5 select-none pointer-events-auto">
+            <a
+              href="https://openfreemap.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-800 font-medium transition-colors"
+            >
+              OpenFreeMap
+            </a>
+            <span className="text-slate-300">•</span>
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-slate-800 transition-colors"
+            >
+              © OpenStreetMap
+            </a>
           </div>
         </div>
 
@@ -557,7 +570,7 @@ export function JabodetabekMap({
             /* Comparison Mode Summary */
             <div className="space-y-3">
               <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-600">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Dashboard Perbandingan
                 </span>
                 <h4 className="text-sm font-bold text-slate-900 mt-0.5">

@@ -13,6 +13,8 @@ import {
   Clock,
   ArrowRight,
   Search,
+  X,
+  User,
   MapPin,
   Radio,
   FileText,
@@ -444,7 +446,7 @@ export function GovAdminContent({
               className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
               title="Hapus pencarian"
             >
-              ✕
+              Tutup
             </button>
           )}
         </div>
@@ -614,7 +616,7 @@ export function GovAdminContent({
                             {r.title}
                           </h3>
                           <p className="text-[11px] text-slate-500 line-clamp-1 mt-1">
-                            📍 {r.address}
+                             {r.address}
                           </p>
                         </div>
 
@@ -656,10 +658,10 @@ export function GovAdminContent({
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 pt-1">
                       <span>
-                        📍 <strong>Lokasi:</strong> {selected.address}
+                         <strong>Lokasi:</strong> {selected.address}
                       </span>
                       <span>
-                        👤 <strong>Pelapor:</strong>{' '}
+                         <strong>Pelapor:</strong>{' '}
                         {selected.is_anonymous ? 'Anonim' : selected.reporter_name || 'Warga'}
                       </span>
                     </div>
@@ -811,7 +813,7 @@ export function GovAdminContent({
 
                             {afterFileName && afterFileSize && (
                               <span className="text-[11px] text-emerald-700 font-medium px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
-                                {afterFileName} ({(afterFileSize / 1024).toFixed(0)} KB) ✓
+                                {afterFileName} ({(afterFileSize / 1024).toFixed(0)} KB)
                               </span>
                             )}
                           </div>

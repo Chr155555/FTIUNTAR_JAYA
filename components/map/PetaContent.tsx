@@ -74,7 +74,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+              className="text-slate-600 hover:text-slate-900 font-medium cursor-pointer"
             >
               Reset Pencarian
             </button>
@@ -138,7 +138,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
                 setSelectedCity('Semua');
                 setSearchQuery('');
               }}
-              className="text-rose-600 hover:text-rose-700 text-[11px] font-semibold underline underline-offset-2 ml-auto cursor-pointer"
+              className="text-slate-600 hover:text-slate-900 text-[11px] font-semibold underline underline-offset-2 ml-auto cursor-pointer"
             >
               Reset Filter
             </button>
@@ -171,7 +171,7 @@ export function PetaContent({ reports, liveRankings }: PetaContentProps) {
           </div>
           <Link
             href="/"
-            className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1"
           >
             <span>Lihat FYP Beranda</span>
             <ArrowRight className="w-3.5 h-3.5" />
