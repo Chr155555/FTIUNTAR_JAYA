@@ -296,6 +296,35 @@ export const JABODETABEK_CITY_RANKINGS = [
 // Alias for backwards compatibility
 export const CITY_RANKINGS = JABODETABEK_CITY_RANKINGS;
 
+export function computeLiveCityRankings(
+  reports: { city: string; status: string }[] = [],
+  penalties: { city: string; penalty_points?: string | number }[] = []
+) {
+  return JABODETABEK_CITY_RANKINGS.map((benchmark) => {
+    const cityReports = reports.filter((r) => isSameCity(r.city, benchmark.city));
+    const totalNew = cityReports.length;
+    const resolvedNew = cityReports.filter((r) => r.status === 'Selesai').length;
+
+    const cityPenalties = penalties
+      .filter((p) => isSameCity(p.city, benchmark.city))
+      .reduce((acc, curr) => acc + (parseFloat(curr.penalty_points?.toString() || '1.5') || 1.5), 0);
+
+    const totalReports = benchmark.total_reports + totalNew;
+    const historicalResolved = Math.round((benchmark.total_reports * benchmark.resolved_rate) / 100);
+    const resolvedRate = Math.round(((historicalResolved + resolvedNew) / totalReports) * 100);
+
+    const adjustedScore = Math.max(50, Math.min(99, +(benchmark.score - cityPenalties).toFixed(1)));
+
+    return {
+      ...benchmark,
+      total_reports: totalReports,
+      resolved_rate: resolvedRate,
+      score: adjustedScore,
+    };
+  }).sort((a, b) => b.score - a.score);
+}
+
+
 export interface CategoryFilterState {
   cluster: string; // 'Semua' atau id kluster
   category: string; // 'Semua' atau nama kategori

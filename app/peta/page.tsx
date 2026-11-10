@@ -1,5 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase/server';
-import { CITIES } from '@/lib/constants';
+import { CITIES, computeLiveCityRankings } from '@/lib/constants';
 import { PetaContent } from '@/components/map/PetaContent';
 import Link from 'next/link';
 import {
@@ -25,56 +25,8 @@ export default async function PetaPage() {
   const reports = reportsRes.data || [];
   const penalties = penaltiesRes.data || [];
 
-  // Dynamically calculate live Jabodetabek city rankings directly from database
-  const liveRankings = CITIES.map((city) => {
-    const cityReports = reports.filter((r) => r.city === city);
-    const totalReports = cityReports.length;
-    const resolvedReports = cityReports.filter((r) => r.status === 'Selesai').length;
-
-    const cityPenalties = penalties
-      .filter((p) => p.city === city)
-      .reduce((acc, curr) => acc + (parseFloat(curr.penalty_points) || 1.5), 0);
-
-    const resolvedRate =
-      totalReports > 0 ? Math.round((resolvedReports / totalReports) * 100) : 85;
-
-    const rawScore = resolvedRate * 0.95 - cityPenalties;
-    const score = Math.max(50, Math.min(99, Math.round(rawScore * 10) / 10));
-
-    let badge = 'Aktif Berbenah';
-    let kpiStatus = 'Cukup (B)';
-    if (score >= 93) {
-      badge = 'Responsif Utama';
-      kpiStatus = 'Sangat Baik (A)';
-    } else if (score >= 89) {
-      badge = 'Kepuasan Tinggi';
-      kpiStatus = 'Baik (B+)';
-    } else if (score < 80) {
-      badge = 'Perhatian Khusus';
-      kpiStatus = 'Dalam Evaluasi (C)';
-    }
-
-    return {
-      city,
-      province: city.includes('Jakarta')
-        ? 'DKI Jakarta'
-        : city.includes('Bogor') || city.includes('Depok') || city.includes('Bekasi')
-        ? 'Jawa Barat'
-        : 'Banten',
-      score,
-      resolved_rate: resolvedRate,
-      avg_response: totalReports > 2 ? '2.4 Jam' : '3.8 Jam',
-      total_reports: totalReports,
-      user_count: Math.max(1200, totalReports * 420),
-      badge,
-      kpi_status: kpiStatus,
-    };
-  })
-    .sort((a, b) => b.score - a.score)
-    .map((item, idx) => ({
-      ...item,
-      rank: idx + 1,
-    }));
+  // Dynamically calculate live Jabodetabek city rankings synchronized with KPI index
+  const liveRankings = computeLiveCityRankings(reports, penalties);
 
   const totalResolved = reports.filter((r) => r.status === 'Selesai').length;
   const totalOnProcess = reports.filter((r) => r.status === 'On-Process').length;
@@ -120,7 +72,7 @@ export default async function PetaPage() {
           <span className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5 block">
             {reports.length}
           </span>
-          <span className="text-[11px] text-slate-500">Tersebar di 13 Wilayah</span>
+          <span className="text-[11px] text-slate-500">Tersebar di ${CITIES.length} Wilayah</span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
@@ -148,10 +100,10 @@ export default async function PetaPage() {
             Kota Tertinggi KPI
           </span>
           <span className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5 block truncate">
-            {liveRankings[0]?.city || 'Kota Depok'}
+            {liveRankings[0]?.city || 'Jakarta Selatan'}
           </span>
           <span className="text-[11px] text-emerald-600 font-semibold">
-            Skor: {liveRankings[0]?.score || 95}%
+            Skor: {liveRankings[0]?.score || 95.2}%
           </span>
         </div>
       </div>

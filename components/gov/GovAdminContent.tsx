@@ -25,7 +25,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { CITIES, isSameCity } from '@/lib/constants';
+import { CITIES, computeLiveCityRankings, isSameCity } from '@/lib/constants';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { Report, ReportStatus } from '@/lib/types';
 
@@ -147,16 +147,10 @@ export function GovAdminContent({
   const totalResolved = reports.filter((r) => r.status === 'Selesai').length;
   const uniqueCitiesCount = new Set(reports.map((r) => r.city)).size;
 
-  // Calculate highest KPI city
+  // Calculate highest KPI city unified with platform KPI
   const topCity = useMemo(() => {
-    const scored = CITIES.map((c) => {
-      const cityReports = reports.filter((r) => r.city === c);
-      const total = cityReports.length;
-      const resolved = cityReports.filter((r) => r.status === 'Selesai').length;
-      const rate = total > 0 ? Math.round((resolved / total) * 100) : 85;
-      return { city: c, score: Math.min(99, Math.max(75, rate)) };
-    }).sort((a, b) => b.score - a.score);
-    return scored[0] || { city: 'Kota Depok', score: 95 };
+    const rankings = computeLiveCityRankings(reports);
+    return rankings[0] || { city: 'Jakarta Selatan', score: 95.2 };
   }, [reports]);
 
   // Handle report selection
